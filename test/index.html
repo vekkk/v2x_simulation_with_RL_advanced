@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Network Simulation - Test Version</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        .info-panel {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+        }
+        .controls-panel {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        .button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-panel">
+        <div>Packets Sent: <span id="packets-sent">0</span></div>
+        <div>Packets Received: <span id="packets-received">0</span></div>
+        <div>Packets Lost: <span id="packets-lost">0</span></div>
+        <div>FPS: <span id="fps">0</span></div>
+    </div>
+
+    <div class="controls-panel">
+        <button id="start-btn" class="button">Start Simulation</button>
+        <button id="stop-btn" class="button" disabled>Stop Simulation</button>
+    </div>
+
+    <!-- Three.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            ROAD: {
+                LENGTH: 200,
+                LANE_WIDTH: 4,
+                NUM_LANES: 4
+            },
+            VEHICLES: {
+                NUM_VEHICLES: 2,
+                PACKET_SEND_INTERVAL: 1000 // ms
+            },
+            NETWORK: {
+                LATENCY: 100, // ms
+                PACKET_LOSS: 0.05, // Reduced to 5%
+                RANGE: 70 // Increased range
+            }
+        };
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Camera position
+        camera.position.set(0, 30, 50);
+        camera.lookAt(0, 0, 0);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 20, 10);
+        scene.add(directionalLight);
+
+        // Create road with better appearance
+        const roadGeometry = new THREE.PlaneGeometry(CONFIG.ROAD.LANE_WIDTH * CONFIG.ROAD.NUM_LANES, CONFIG.ROAD.LENGTH);
+        const roadMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x2c3e50, // Darker, more realistic road color
+            shininess: 20,
+            specular: 0x333333
+        });
+        const road = new THREE.Mesh(roadGeometry, roadMaterial);
+        road.rotation.x = -Math.PI / 2;
+        road.receiveShadow = true;
+        scene.add(road);
+
+        // Create road shoulders
+        const shoulderGeometry = new THREE.PlaneGeometry(1, CONFIG.ROAD.LENGTH);
+        const shoulderMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x95a5a6, // Light gray for shoulders
+            shininess: 20,
+            specular: 0x333333
+        });
+
+        // Add shoulders on both sides
+        const leftShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
+        leftShoulder.rotation.x = -Math.PI / 2;
+        leftShoulder.position.set(-CONFIG.ROAD.LANE_WIDTH * CONFIG.ROAD.NUM_LANES / 2 - 0.5, 0.01, 0);
+        scene.add(leftShoulder);
+
+        const rightShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
+        rightShoulder.rotation.x = -Math.PI / 2;
+        rightShoulder.position.set(CONFIG.ROAD.LANE_WIDTH * CONFIG.ROAD.NUM_LANES / 2 + 0.5, 0.01, 0);
+        scene.add(rightShoulder);
+
+        // Create lane markers with dashed lines
+        const dashLength = 5;
+        const dashGap = 5;
+        const numDashes = Math.floor(CONFIG.ROAD.LENGTH / (dashLength + dashGap));
+        
+        for (let i = 1; i < CONFIG.ROAD.NUM_LANES; i++) {
+            const x = -CONFIG.ROAD.LANE_WIDTH * CONFIG.ROAD.NUM_LANES / 2 + i * CONFIG.ROAD.LANE_WIDTH;
+            
+            for (let j = 0; j < numDashes; j++) {
+                const dashGeometry = new THREE.PlaneGeometry(0.2, dashLength);
+                const dashMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xffffff,
+                    shininess: 50,
+                    specular: 0x666666
+                });
+                const dash = new THREE.Mesh(dashGeometry, dashMaterial);
+                dash.rotation.x = -Math.PI / 2;
+                const z = -CONFIG.ROAD.LENGTH / 2 + j * (dashLength + dashGap) + dashLength / 2;
+                dash.position.set(x, 0.02, z);
+                scene.add(dash);
+            }
+        }
+
+        // Create base station outside the road
+        const towerGeometry = new THREE.BoxGeometry(2, 20, 2);
+        const towerMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x7f8c8d,
+            shininess: 30,
+            specular: 0x444444
+        });
+        const tower = new THREE.Mesh(towerGeometry, towerMaterial);
+        tower.position.set(CONFIG.ROAD.LANE_WIDTH * CONFIG.ROAD.NUM_LANES / 2 + 10, 10, 0); // Moved to the right side of the road
+        tower.castShadow = true;
+        scene.add(tower);
+
+        const antennaGeometry = new THREE.CylinderGeometry(0.5, 0.5, 5, 8);
+        const antennaMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x95a5a6,
+            shininess: 50,
+            specular: 0x666666
+        });
+        const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+        antenna.position.set(CONFIG.ROAD.LANE_WIDTH * CONFIG.ROAD.NUM_LANES / 2 + 10, 22.5, 0); // Moved with the tower
+        antenna.castShadow = true;
+        scene.add(antenna);
+
+        // Enable shadows
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Update lighting for shadows
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 500;
+        directionalLight.shadow.camera.left = -100;
+        directionalLight.shadow.camera.right = 100;
+        directionalLight.shadow.camera.top = 100;
+        directionalLight.shadow.camera.bottom = -100;
+
+        // Create vehicles
+        const vehicles = [];
+        const vehicleTypes = {
+            CAR: {
+                geometry: new THREE.BoxGeometry(2, 1, 4),
+                material: new THREE.MeshPhongMaterial({ color: 0x00ff00 }),
+                speedRange: { min: 0.2, max: 0.4 }
+            },
+            TRUCK: {
+                geometry: new THREE.BoxGeometry(2.5, 2, 6),
+                material: new THREE.MeshPhongMaterial({ color: 0xff0000 }),
+                speedRange: { min: 0.1, max: 0.3 }
+            }
+        };
+
+        // Calculate lane centers
+        const laneCenters = [];
+        const startX = -CONFIG.ROAD.LANE_WIDTH * CONFIG.ROAD.NUM_LANES / 2 + CONFIG.ROAD.LANE_WIDTH / 2;
+
+        for (let i = 0; i < CONFIG.ROAD.NUM_LANES; i++) {
+            laneCenters.push(startX + i * CONFIG.ROAD.LANE_WIDTH);
+        }
+
+        // Create initial vehicles
+        const car = createVehicle('CAR', laneCenters[0], -CONFIG.ROAD.LENGTH / 4);
+        const truck = createVehicle('TRUCK', laneCenters[1], CONFIG.ROAD.LENGTH / 4);
+        vehicles.push(car, truck);
+
+        function createVehicle(type, x, z) {
+            const vehicleType = vehicleTypes[type];
+            const vehicle = new THREE.Mesh(vehicleType.geometry, vehicleType.material);
+            
+            vehicle.position.set(x, vehicleType.geometry.parameters.height / 2, z);
+            vehicle.userData = {
+                type: type,
+                direction: 1,
+                speed: getRandomSpeed(type),
+                lastPacketTime: 0
+            };
+
+            scene.add(vehicle);
+            return vehicle;
+        }
+
+        function getRandomSpeed(type) {
+            const range = vehicleTypes[type].speedRange;
+            return range.min + Math.random() * (range.max - range.min);
+        }
+
+        // Stats tracking
+        let packetsSent = 0;
+        let packetsReceived = 0;
+        let packetsLost = 0;
+        let fps = 0;
+        let lastTime = performance.now();
+        let frames = 0;
+
+        // Update stats display
+        function updateStats() {
+            document.getElementById('packets-sent').textContent = packetsSent;
+            document.getElementById('packets-received').textContent = packetsReceived;
+            document.getElementById('packets-lost').textContent = packetsLost;
+        }
+
+        // Update FPS display
+        function updateFPS() {
+            const now = performance.now();
+            frames++;
+
+            if (now - lastTime >= 1000) {
+                fps = Math.round((frames * 1000) / (now - lastTime));
+                document.getElementById('fps').textContent = fps;
+                frames = 0;
+                lastTime = now;
+            }
+        }
+
+        // Update button states
+        function updateButtonStates(isRunning) {
+            document.getElementById('start-btn').disabled = isRunning;
+            document.getElementById('stop-btn').disabled = !isRunning;
+        }
+
+        // Communication visualization
+        function showCommunicationLine(vehicle, color) {
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                vehicle.position,
+                new THREE.Vector3(CONFIG.ROAD.LANE_WIDTH * CONFIG.ROAD.NUM_LANES / 2 + 10, 20, 0) // Updated base station position
+            ]);
+            const lineMaterial = new THREE.LineBasicMaterial({ color: color });
+            const line = new THREE.Line(lineGeometry, lineMaterial);
+            scene.add(line);
+
+            setTimeout(() => {
+                scene.remove(line);
+            }, 1000);
+        }
+
+        // Simulation state
+        let isRunning = false;
+        let lastUpdateTime = 0;
+
+        // Update function
+        function update() {
+            if (!isRunning) return;
+
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastUpdateTime;
+
+            // Update vehicle positions
+            vehicles.forEach(vehicle => {
+                const speed = vehicle.userData.speed;
+                vehicle.position.z += speed * vehicle.userData.direction;
+
+                // Wrap around when vehicle reaches road boundaries
+                if (vehicle.position.z > CONFIG.ROAD.LENGTH / 2) {
+                    vehicle.position.z = -CONFIG.ROAD.LENGTH / 2;
+                } else if (vehicle.position.z < -CONFIG.ROAD.LENGTH / 2) {
+                    vehicle.position.z = CONFIG.ROAD.LENGTH / 2;
+                }
+
+                // Simulate communication
+                if (currentTime - vehicle.userData.lastPacketTime >= CONFIG.VEHICLES.PACKET_SEND_INTERVAL) {
+                    packetsSent++;
+                    vehicle.userData.lastPacketTime = currentTime;
+
+                    // Check if vehicle is within range
+                    const distance = Math.sqrt(
+                        Math.pow(vehicle.position.x - (CONFIG.ROAD.LANE_WIDTH * CONFIG.ROAD.NUM_LANES / 2 + 10), 2) +
+                        Math.pow(vehicle.position.y - 20, 2) +
+                        Math.pow(vehicle.position.z, 2)
+                    );
+
+                    if (distance <= CONFIG.NETWORK.RANGE) {
+                        // Simulate packet loss
+                        if (Math.random() >= CONFIG.NETWORK.PACKET_LOSS) {
+                            setTimeout(() => {
+                                packetsReceived++;
+                                showCommunicationLine(vehicle, 0x00ff00);
+                                updateStats();
+                            }, CONFIG.NETWORK.LATENCY);
+                        } else {
+                            packetsLost++;
+                            showCommunicationLine(vehicle, 0xff0000);
+                        }
+                    } else {
+                        packetsLost++;
+                        showCommunicationLine(vehicle, 0xff0000);
+                    }
+                    updateStats();
+                }
+            });
+
+            // Update UI
+            updateFPS();
+            lastUpdateTime = currentTime;
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            update();
+            renderer.render(scene, camera);
+        }
+
+        // Event listeners
+        document.getElementById('start-btn').addEventListener('click', () => {
+            isRunning = true;
+            lastUpdateTime = performance.now();
+            updateButtonStates(true);
+            packetsSent = 0;
+            packetsReceived = 0;
+            packetsLost = 0;
+            updateStats();
+        });
+
+        document.getElementById('stop-btn').addEventListener('click', () => {
+            isRunning = false;
+            updateButtonStates(false);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start animation loop
+        animate();
+    </script>
+</body>
+</html> 
