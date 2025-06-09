@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced V2X Network Simulation with RL</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Analytics toggle button styling */
+        .analytics-toggle-btn {
+            background: linear-gradient(45deg, #9C27B0, #E91E63);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .analytics-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .analytics-toggle-btn.active {
+            background: linear-gradient(45deg, #4CAF50, #8BC34A);
+        }
+        
+        /* Dashboard toggle button styling */
+        .dashboard-toggle-btn {
+            background: linear-gradient(45deg, #FF9800, #FF5722);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .dashboard-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .dashboard-toggle-btn.active {
+            background: linear-gradient(45deg, #4CAF50, #8BC34A);
+        }
+        
+        /* Hide analytics panel by default */
+        #analytics-panel {
+            display: none;
+        }
+        
+        /* When analytics are shown, adjust other panels */
+        body.analytics-visible #analytics-panel {
+            display: block;
+        }
+        
+        /* Dashboard visibility controls */
+        .simulation-dashboard {
+            display: block;
+            transition: opacity 0.3s ease;
+        }
+        
+        body.dashboards-hidden .simulation-dashboard {
+            display: none;
+        }
+        
+        /* Controls Panel should always be visible */
+        .controls-panel {
+            display: block !important; /* Ensure it's visible */
+            outline: 5px solid #00FF00 !important; /* Bright green outline for debugging */
+            background: rgba(0, 0, 0, 1) !important; /* Solid background */
+            z-index: 9999 !important; /* Maximum z-index */
+            position: fixed !important;
+            bottom: 20px !important;
+            left: 20px !important;
+            pointer-events: auto !important;
+            user-select: none !important;
+            padding: 20px !important; /* Add padding */
+            border-radius: 10px !important;
+            min-width: 200px !important;
+        }
+        
+        /* When dashboards are hidden, make controls more prominent */
+        body.dashboards-hidden .controls-panel {
+            border-color: #FF9800;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+        
+        /* When dashboards are hidden, show a minimal overlay */
+        .minimal-overlay {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #FF9800;
+            z-index: 1000;
+            display: none;
+            font-size: 14px;
+        }
+        
+        body.dashboards-hidden .minimal-overlay {
+            display: block;
+        }
+        
+        .minimal-overlay h4 {
+            color: #FF9800;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        
+        .minimal-overlay .status-item {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            min-width: 200px;
+        }
+        
+        /* Vehicle Summary Panel - adjust positioning to avoid overlap */
+        .vehicle-summary-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 280px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #4CAF50;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 999;
+        }
+        
+        /* Vehicle Info Panel - position to avoid overlap with controls */
+        .vehicle-info-panel {
+            position: fixed;
+            left: 20px;
+            top: 20px; /* Move to top instead of center */
+            width: 300px;
+            max-height: 50vh; /* Reduce height */
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #2196F3;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 998;
+        }
+        
+        /* Remove duplicate controls panel CSS and ensure proper button styling */
+        .controls-panel button {
+            display: block;
+            width: 100%;
+            margin: 8px 0;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            pointer-events: auto !important; /* Ensure buttons are clickable */
+        }
+        
+        .controls-panel button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .controls-panel button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #start-btn {
+            background: linear-gradient(45deg, #4CAF50, #8BC34A) !important;
+            color: white !important;
+        }
+        
+        #stop-btn {
+            background: linear-gradient(45deg, #F44336, #E57373) !important;
+            color: white !important;
+        }
+        
+        /* Ensure no other panels can overlap the controls area */
+        .vehicle-info-panel,
+        .vehicle-summary-panel {
+            pointer-events: none !important; /* Make other panels non-interactive in controls area */
+        }
+        
+        .vehicle-info-panel *,
+        .vehicle-summary-panel * {
+            pointer-events: auto; /* But allow their content to be interactive */
+        }
+        
+        /* Create a no-overlap zone around controls */
+        .controls-panel::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: transparent;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Analytics Controls Styling */
+        .analytics-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #444;
+        }
+        
+        .analytics-controls button {
+            padding: 8px 12px;
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .analytics-controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+            background: linear-gradient(45deg, #1976D2, #1CB5E0);
+        }
+        
+        .analytics-controls button:active {
+            transform: translateY(0);
+        }
+        
+        #reset-analytics {
+            background: linear-gradient(45deg, #FF5722, #FF8A65) !important;
+        }
+        
+        #reset-analytics:hover {
+            background: linear-gradient(45deg, #E64A19, #FF7043) !important;
+            box-shadow: 0 4px 12px rgba(255, 87, 34, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <!-- Minimal Overlay (shown when dashboards are hidden) -->
+    <div class="minimal-overlay">
+        <h4>🚗 V2X Simulation</h4>
+        <div class="status-item">
+            <span>Vehicles:</span>
+            <span id="minimal-vehicles">0</span>
+        </div>
+        <div class="status-item">
+            <span>Packets:</span>
+            <span id="minimal-packets">0</span>
+        </div>
+        <div class="status-item">
+            <span>FPS:</span>
+            <span id="minimal-fps">0</span>
+        </div>
+        <div class="status-item">
+            <span>AI Learning:</span>
+            <span id="minimal-learning">0%</span>
+        </div>
+    </div>
+
+    <!-- Main Statistics Panel -->
+    <div class="info-panel simulation-dashboard">
+        <h3>Network Statistics</h3>
+        <div>Packets Sent: <span id="packets-sent">0</span></div>
+        <div>Packets Received: <span id="packets-received">0</span></div>
+        <div>Packets Lost: <span id="packets-lost">0</span></div>
+        <div>Avg Latency: <span id="avg-latency">0 ms</span></div>
+        <div>Total Data: <span id="total-data">0.00 KB</span></div>
+        <div>Handovers: <span id="handover-count">0</span></div>
+        <div>FPS: <span id="fps">0</span></div>
+        <div>AI Epsilon: <span id="ai-epsilon">100.0%</span></div>
+    </div>
+
+    <!-- Message Type Statistics Panel -->
+    <div class="message-type-panel simulation-dashboard">
+        <h3>Message Types</h3>
+        <div class="message-type-legend">
+            <div class="legend-item" id="safety-message-stats">
+                <div class="color-box" style="background: #ff0000;"></div>
+                <span>Safety (M1): <span class="count">0</span></span>
+            </div>
+            <div class="legend-item" id="basic-cam-stats">
+                <div class="color-box" style="background: #00ff00;"></div>
+                <span>CAM (M2): <span class="count">0</span></span>
+            </div>
+            <div class="legend-item" id="traffic-message-stats">
+                <div class="color-box" style="background: #ffa500;"></div>
+                <span>Traffic (M3): <span class="count">0</span></span>
+            </div>
+            <div class="legend-item" id="infotainment-stats">
+                <div class="color-box" style="background: #0080ff;"></div>
+                <span>Info (M4): <span class="count">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RL Learning Panel -->
+    <div class="rl-learning-panel simulation-dashboard">
+        <h3>RL Learning</h3>
+        <div>Total Reward: <span id="total-reward">0.00</span></div>
+        <div>Avg Reward: <span id="average-reward">0.000</span></div>
+        <div>Episodes: <span id="episode-count">0</span></div>
+        <div>Exploration: <span id="exploration-rate">100.0%</span></div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="learning-progress" style="width: 0%;"></div>
+            </div>
+            <span class="progress-label">Learning Progress</span>
+        </div>
+    </div>
+
+    <!-- Network Performance Panel -->
+    <div class="network-stats-panel simulation-dashboard">
+        <h3>Network Performance</h3>
+        <div class="network-stats" id="dsrc-stats">
+            <h4 style="color: #4CAF50;">DSRC</h4>
+            <div>Sent: <span class="sent">0</span></div>
+            <div>Received: <span class="received">0</span></div>
+            <div>Lost: <span class="lost">0</span></div>
+        </div>
+        <div class="network-stats" id="wifi-stats">
+            <h4 style="color: #2196F3;">WiFi</h4>
+            <div>Sent: <span class="sent">0</span></div>
+            <div>Received: <span class="received">0</span></div>
+            <div>Lost: <span class="lost">0</span></div>
+        </div>
+        <div class="network-stats" id="lte-stats">
+            <h4 style="color: #9C27B0;">LTE</h4>
+            <div>Sent: <span class="sent">0</span></div>
+            <div>Received: <span class="received">0</span></div>
+            <div>Lost: <span class="lost">0</span></div>
+        </div>
+    </div>
+
+    <!-- Vehicle Summary Panel -->
+    <div class="vehicle-summary-panel simulation-dashboard">
+        <h3>Vehicle Summary</h3>
+        <div class="summary-section">
+            <h4>Total Vehicles</h4>
+            <div class="summary-value" id="total-vehicles">0</div>
+        </div>
+        <div class="summary-section">
+            <h4>By Type</h4>
+            <div>Cars: <span id="car-count">0</span></div>
+            <div>Trucks: <span id="truck-count">0</span></div>
+            <div>Buses: <span id="bus-count">0</span></div>
+        </div>
+        <div class="summary-section">
+            <h4>Network Distribution</h4>
+            <div>DSRC: <span id="dsrc-vehicles">0</span></div>
+            <div>WiFi: <span id="wifi-vehicles">0</span></div>
+            <div>LTE: <span id="lte-vehicles">0</span></div>
+            <div>None: <span id="none-vehicles">0</span></div>
+        </div>
+        <div class="summary-section">
+            <h4>Message Distribution</h4>
+            <div>Safety: <span id="safety_message-vehicles">0</span></div>
+            <div>CAM: <span id="basic_cam_message-vehicles">0</span></div>
+            <div>Traffic: <span id="traffic_message-vehicles">0</span></div>
+            <div>Info: <span id="infotainment_message-vehicles">0</span></div>
+        </div>
+        <div class="summary-section">
+            <h4>RL Performance</h4>
+            <div>Avg Reward: <span id="vehicle-average-reward">0.000</span></div>
+            <div>Msg Changes: <span id="total-message-changes">0</span></div>
+        </div>
+    </div>
+
+    <!-- Vehicle Status Panel -->
+    <div class="vehicle-info-panel simulation-dashboard">
+        <h3>Live Vehicle Status</h3>
+        <div id="vehicle-status-container"></div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+        <button id="start-btn" class="button">Start Simulation</button>
+        <button id="stop-btn" class="button" disabled>Stop Simulation</button>
+        <button id="dashboard-toggle" class="dashboard-toggle-btn">
+            🎛️ Hide Dashboards
+        </button>
+        <button id="analytics-toggle" class="analytics-toggle-btn">
+            📊 Show Analytics
+        </button>
+    </div>
+
+    <!-- Analytics Panel (Hidden by default) -->
+    <!-- This will be dynamically created by PlotManager when analytics are enabled -->
+
+    <!-- Chart.js Library for Real-time Analytics (loaded only when needed) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Import map for Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Main application -->
+    <script type="module">
+        import { SimulationManager } from './js/SimulationManager.js';
+        
+        // Initialize simulation when the window loads
+        window.addEventListener('load', async () => {
+            console.log('Window loaded, initializing advanced V2X simulation...');
+            try {
+                const simulation = new SimulationManager();
+                
+                // Initialize all managers
+                console.log('Initializing managers...');
+                await simulation.initializeManagers();
+                console.log('✅ All managers initialized successfully!');
+                
+                // Make simulation globally accessible for debugging
+                window.simulation = simulation;
+                
+                console.log('🚀 V2X Simulation ready! Click "Start Simulation" to begin.');
+            } catch (error) {
+                console.error('❌ Failed to initialize simulation:', error);
+                alert('Failed to initialize simulation. Check console for details.');
+            }
+        });
+    </script>
+
+    <script>
+        // Dashboard and Analytics Toggle Functionality
+        let analyticsEnabled = false;
+        let dashboardsEnabled = true;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎛️ Advanced V2X Interface Controls Loaded');
+            
+            // Analytics toggle functionality
+            const analyticsToggle = document.getElementById('analytics-toggle');
+            if (analyticsToggle) {
+                analyticsToggle.addEventListener('click', function() {
+                    analyticsEnabled = !analyticsEnabled;
+                    const button = this;
+                    
+                    if (analyticsEnabled) {
+                        document.body.classList.add('analytics-visible');
+                        button.textContent = '📊 Hide Analytics';
+                        button.classList.add('active');
+                        
+                        console.log('📊 Analytics enabled - showing performance plots');
+                    } else {
+                        document.body.classList.remove('analytics-visible');
+                        button.textContent = '📊 Show Analytics';
+                        button.classList.remove('active');
+                        
+                        console.log('📊 Analytics disabled - hiding performance plots');
+                    }
+                });
+            }
+            
+            // Dashboard toggle functionality
+            const dashboardToggle = document.getElementById('dashboard-toggle');
+            if (dashboardToggle) {
+                dashboardToggle.addEventListener('click', function() {
+                    dashboardsEnabled = !dashboardsEnabled;
+                    const button = this;
+                    
+                    if (dashboardsEnabled) {
+                        document.body.classList.remove('dashboards-hidden');
+                        button.textContent = '🎛️ Hide Dashboards';
+                        button.classList.remove('active');
+                        
+                        console.log('🎛️ Dashboards enabled - showing all panels');
+                    } else {
+                        document.body.classList.add('dashboards-hidden');
+                        button.textContent = '🎛️ Show Dashboards';
+                        button.classList.add('active');
+                        
+                        console.log('🎛️ Dashboards hidden - clean 3D view mode');
+                    }
+                });
+            }
+        });
+        
+        // Update minimal overlay with current stats
+        function updateMinimalOverlay() {
+            if (!dashboardsEnabled) {
+                const totalVehicles = document.getElementById('total-vehicles')?.textContent || '0';
+                const packetsSent = document.getElementById('packets-sent')?.textContent || '0';
+                const fps = document.getElementById('fps')?.textContent || '0';
+                const learningProgress = document.getElementById('learning-progress')?.style.width || '0%';
+                
+                document.getElementById('minimal-vehicles').textContent = totalVehicles;
+                document.getElementById('minimal-packets').textContent = packetsSent;
+                document.getElementById('minimal-fps').textContent = fps;
+                document.getElementById('minimal-learning').textContent = learningProgress;
+            }
+        }
+        
+        // Update minimal overlay every 2 seconds
+        setInterval(updateMinimalOverlay, 2000);
+        
+        // Make analytics state available globally
+        window.isAnalyticsEnabled = () => analyticsEnabled;
+        window.isDashboardsEnabled = () => dashboardsEnabled;
+        
+        // Add helpful console messages for the real simulation
+        console.log('🚗 Advanced V2X Network Simulation with RL');
+        console.log('🎯 This runs the ACTUAL simulation with:');
+        console.log('  • Real 3D vehicles moving on roads');
+        console.log('  • Live AI learning with Q-learning algorithm');
+        console.log('  • Actual network packet transmission');
+        console.log('  • Configurable interface options');
+        console.log('');
+        console.log('🎛️ Interface Controls:');
+        console.log('  • Click "🎛️ Hide Dashboards" for clean 3D view');
+        console.log('  • Click "📊 Show Analytics" for performance plots');
+        console.log('  • Mix and match for your preferred view');
+        console.log('');
+        console.log('📊 Analytics Features (Optional):');
+        console.log('  • Real-time learning progress tracking');
+        console.log('  • Packet reception rate analysis');
+        console.log('  • Network efficiency monitoring');
+        console.log('');
+        console.log('🚀 Click "Start Simulation" to begin the real V2X simulation!');
+    </script>
+</body>
+</html> 
