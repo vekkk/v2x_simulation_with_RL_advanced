@@ -221,6 +221,9 @@ export class SimulationManager {
         // Update RL stats
         this.uiManager.updateRLStats(this.networkManager.ai.getStats());
         
+        // Update safety message tracker
+        this.uiManager.updateSafetyMessageTracker(this.networkManager.getSafetyMessageStats());
+        
         // Log periodic updates for debugging
         if (this.frameCount % 60 === 0) { // Log every 60 frames
             console.log('Simulation Stats Update:', {
@@ -253,6 +256,9 @@ export class SimulationManager {
         
         // Reset network stats
         this.networkManager.resetStats();
+        
+        // Reset safety message stats
+        this.networkManager.resetSafetyMessageStats();
         
         // Reset AI learning
         this.networkManager.ai.reset();

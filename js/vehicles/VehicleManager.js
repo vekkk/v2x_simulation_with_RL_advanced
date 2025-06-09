@@ -52,11 +52,46 @@ export class VehicleManager {
     }
 
     getVehicleSummary() {
-        const messageTypeStats = this.getMessageTypeStatistics();
+        // Calculate real-time network distribution
+        const byNetwork = {
+            DSRC: 0,
+            WIFI: 0,
+            LTE: 0,
+            None: 0
+        };
+
+        // Calculate real-time message type distribution
+        const byMessageType = {};
         
+        // Calculate real-time type distribution
+        const byType = {};
+
+        // Process all vehicles to get current distributions
+        this.vehicles.forEach(vehicle => {
+            const userData = vehicle.userData;
+            
+            // Count by network
+            const currentNetwork = userData.currentNetwork || 'None';
+            if (byNetwork.hasOwnProperty(currentNetwork)) {
+                byNetwork[currentNetwork]++;
+            } else {
+                byNetwork[currentNetwork] = 1;
+            }
+
+            // Count by message type
+            const messageType = userData.currentMessageType || 'BASIC_CAM_MESSAGE';
+            byMessageType[messageType] = (byMessageType[messageType] || 0) + 1;
+
+            // Count by vehicle type
+            const vehicleType = userData.type;
+            byType[vehicleType] = (byType[vehicleType] || 0) + 1;
+        });
+
         return {
-            ...this.vehicleSummary,
-            byMessageType: messageTypeStats,
+            totalVehicles: this.vehicles.length,
+            byType: byType,
+            byNetwork: byNetwork,
+            byMessageType: byMessageType,
             averageReward: this.getAverageReward(),
             totalMessageTypeChanges: this.getTotalMessageTypeChanges()
         };
@@ -639,12 +674,39 @@ export class VehicleManager {
             stats[type] = 0;
         });
         
+        // Debug: Log vehicle message types
+        const vehicleMessageTypes = [];
+        
         this.vehicles.forEach(vehicle => {
             const messageType = vehicle.userData.currentMessageType;
+            vehicleMessageTypes.push(messageType);
+            
             if (stats.hasOwnProperty(messageType)) {
                 stats[messageType]++;
+            } else {
+                console.warn(`VehicleManager: Unknown message type: ${messageType}`);
             }
         });
+        
+        // Debug logging for negative values
+        Object.entries(stats).forEach(([type, count]) => {
+            if (count < 0) {
+                console.error(`VehicleManager: Negative count for ${type}: ${count}`);
+                console.log('Vehicle message types:', vehicleMessageTypes);
+                console.log('All vehicles:', this.vehicles.map(v => ({
+                    id: v.id,
+                    messageType: v.userData.currentMessageType,
+                    userData: v.userData
+                })));
+            }
+        });
+        
+        // Log stats occasionally for debugging
+        if (Math.random() < 0.01) { // 1% chance
+            console.log('VehicleManager Message Type Stats:', stats);
+            console.log('Total vehicles:', this.vehicles.length);
+            console.log('Vehicle message types:', vehicleMessageTypes);
+        }
         
         return stats;
     }

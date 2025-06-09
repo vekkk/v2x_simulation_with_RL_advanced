@@ -20,6 +20,17 @@ export class NetworkManager {
             }
         };
 
+        // Safety message tracking
+        this.safetyMessageStats = {
+            total: 0,
+            networks: {
+                DSRC: { sent: 0, success: 0, failed: 0 },
+                WIFI: { sent: 0, success: 0, failed: 0 },
+                LTE: { sent: 0, success: 0, failed: 0 }
+            },
+            recentAlerts: []
+        };
+
         this.towers = {};
         this.communicationLines = new Map();
         this.ai = new BaseStationAI();
@@ -572,6 +583,26 @@ export class NetworkManager {
                 this.stats.packetsSent++;
                 this.stats.networkStats[selectedNetwork].sent++;
 
+                // Track safety messages specifically
+                if (messageType === 'SAFETY_MESSAGE') {
+                    this.safetyMessageStats.total++;
+                    this.safetyMessageStats.networks[selectedNetwork].sent++;
+                    
+                    if (packetSuccess) {
+                        this.safetyMessageStats.networks[selectedNetwork].success++;
+                    } else {
+                        this.safetyMessageStats.networks[selectedNetwork].failed++;
+                        
+                        // Add critical safety alert if failure rate is concerning
+                        const networkStats = this.safetyMessageStats.networks[selectedNetwork];
+                        const failureRate = networkStats.sent > 0 ? networkStats.failed / networkStats.sent : 0;
+                        
+                        if (failureRate > 0.2 && networkStats.sent > 5) { // More than 20% failure rate
+                            this.addSafetyAlert(`Critical: ${selectedNetwork} safety message failure rate: ${(failureRate * 100).toFixed(1)}%`);
+                        }
+                    }
+                }
+
                 if (packetSuccess) {
                     this.stats.packetsReceived++;
                     this.stats.networkStats[selectedNetwork].received++;
@@ -897,5 +928,40 @@ export class NetworkManager {
         environmentalLoss += priorityFactor;
         
         return Math.min(0.15, environmentalLoss); // Cap at 15% additional loss
+    }
+
+    // Add safety alert to recent alerts list
+    addSafetyAlert(message) {
+        const alert = {
+            timestamp: Date.now(),
+            message: message
+        };
+        
+        this.safetyMessageStats.recentAlerts.push(alert);
+        
+        // Keep only the last 10 alerts
+        if (this.safetyMessageStats.recentAlerts.length > 10) {
+            this.safetyMessageStats.recentAlerts.shift();
+        }
+        
+        console.warn('SAFETY ALERT:', message);
+    }
+
+    // Get safety message statistics
+    getSafetyMessageStats() {
+        return this.safetyMessageStats;
+    }
+
+    // Reset safety message statistics
+    resetSafetyMessageStats() {
+        this.safetyMessageStats = {
+            total: 0,
+            networks: {
+                DSRC: { sent: 0, success: 0, failed: 0 },
+                WIFI: { sent: 0, success: 0, failed: 0 },
+                LTE: { sent: 0, success: 0, failed: 0 }
+            },
+            recentAlerts: []
+        };
     }
 } 

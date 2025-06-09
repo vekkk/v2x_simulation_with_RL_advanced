@@ -52,6 +52,9 @@ export class UIManager {
         // Create SNR Analytics Panel
         this.createSNRAnalyticsPanel();
 
+        // Create Safety Message Tracker
+        this.createSafetyMessageTracker();
+
         this.setSimulationRunning(false);
         this.setupEventListeners();
     }
@@ -143,7 +146,7 @@ export class UIManager {
                 border: 2px solid #4CAF50;
                 font-family: 'Courier New', monospace;
                 font-size: 12px;
-                z-index: 1000;
+                z-index: 1002;
                 max-height: 80vh;
                 overflow-y: auto;
             }
@@ -240,6 +243,120 @@ export class UIManager {
 
         // Insert the panel into the page
         document.body.appendChild(snrPanel);
+    }
+
+    createSafetyMessageTracker() {
+        console.log('UIManager: Creating Safety Message Tracker...');
+        
+        // Remove any existing tracker first
+        const existingTracker = document.getElementById('safety-message-tracker');
+        if (existingTracker) {
+            existingTracker.remove();
+            console.log('UIManager: Removed existing Safety Message Tracker');
+        }
+
+        console.log('UIManager: Creating new Safety Message Tracker panel...');
+
+        // Create a simple, highly visible panel with RL learning colors
+        const safetyPanel = document.createElement('div');
+        safetyPanel.id = 'safety-message-tracker';
+        safetyPanel.style.cssText = `
+            position: fixed !important;
+            bottom: 20px !important;
+            right: 20px !important;
+            width: 320px !important;
+            height: 240px !important;
+            background: rgba(33, 150, 243, 0.95) !important;
+            color: white !important;
+            border: 2px solid #2196F3 !important;
+            border-radius: 8px !important;
+            z-index: 99999 !important;
+            padding: 15px !important;
+            font-size: 12px !important;
+            font-family: 'Courier New', monospace !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            box-shadow: 0 0 20px rgba(33, 150, 243, 0.5) !important;
+        `;
+        
+        safetyPanel.innerHTML = `
+            <h3 style="color: #64B5F6; margin: 0 0 15px 0; font-size: 16px; text-align: center;">🚨 Safety Message Tracker</h3>
+            <div style="background: rgba(33, 150, 243, 0.1); padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid rgba(33, 150, 243, 0.3);">
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span style="color: #CCCCCC;">Total Safety Messages:</span>
+                    <span style="color: #4CAF50; font-weight: bold;" id="total-safety-messages">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span style="color: #CCCCCC;">Overall Success Rate:</span>
+                    <span style="color: #4CAF50; font-weight: bold;" id="overall-safety-success">0.0%</span>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 10px;">
+                <h4 style="color: #90CAF9; margin: 10px 0 8px 0; font-size: 14px; border-bottom: 1px solid #444; padding-bottom: 3px;">📡 Per-Network Performance</h4>
+                
+                <div style="background: rgba(255, 255, 255, 0.05); margin: 8px 0; padding: 8px; border-radius: 4px; border-left: 3px solid #4CAF50;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <span style="font-weight: bold; color: #FFFFFF;">🚗 DSRC (V2V)</span>
+                        <span style="font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); color: #CCCCCC;">HIGH</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #CCCCCC;">Success:</span>
+                        <span style="color: #4CAF50; font-weight: bold;" id="dsrc-safety-success">0</span>
+                    </div>
+                </div>
+
+                <div style="background: rgba(255, 255, 255, 0.05); margin: 8px 0; padding: 8px; border-radius: 4px; border-left: 3px solid #2196F3;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <span style="font-weight: bold; color: #FFFFFF;">📶 WiFi (RSU)</span>
+                        <span style="font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); color: #CCCCCC;">MED</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #CCCCCC;">Success:</span>
+                        <span style="color: #4CAF50; font-weight: bold;" id="wifi-safety-success">0</span>
+                    </div>
+                </div>
+
+                <div style="background: rgba(255, 255, 255, 0.05); margin: 8px 0; padding: 8px; border-radius: 4px; border-left: 3px solid #FF9800;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <span style="font-weight: bold; color: #FFFFFF;">🔗 LTE (Cellular)</span>
+                        <span style="font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); color: #CCCCCC;">LOW</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #CCCCCC;">Success:</span>
+                        <span style="color: #4CAF50; font-weight: bold;" id="lte-safety-success">0</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Force append to body
+        document.body.appendChild(safetyPanel);
+        
+        console.log('🚨 SAFETY MESSAGE TRACKER CREATED WITH RL LEARNING COLORS');
+
+        // Initialize safety message tracking data
+        this.safetyMessageStats = {
+            total: 0,
+            networks: {
+                DSRC: { sent: 0, success: 0, failed: 0 },
+                WIFI: { sent: 0, success: 0, failed: 0 },
+                LTE: { sent: 0, success: 0, failed: 0 }
+            },
+            recentAlerts: []
+        };
+        
+        // Verify it was added
+        setTimeout(() => {
+            const testPanel = document.getElementById('safety-message-tracker');
+            if (testPanel) {
+                console.log('✅ SUCCESS: Safety Message Tracker is in the DOM');
+                console.log('Panel bounds:', testPanel.getBoundingClientRect());
+            } else {
+                console.error('❌ FAILED: Safety Message Tracker not found in DOM');
+            }
+        }, 100);
     }
 
     setupEventListeners() {
@@ -753,39 +870,69 @@ export class UIManager {
         }
     }
 
-    resetVehicleStatus() {
-        if (this.vehicleStatusContainer) {
-            this.vehicleStatusContainer.innerHTML = '';
-        }
-    }
-
-    resetNetworkStats() {
-        // Don't reset stats when stopping, only when explicitly requested
-        if (this.packetsSentElement) {
-            this.packetsSentElement.textContent = '0';
-        }
-        if (this.packetsReceivedElement) {
-            this.packetsReceivedElement.textContent = '0';
-        }
-        if (this.packetsLostElement) {
-            this.packetsLostElement.textContent = '0';
-        }
-        if (this.avgLatencyElement) {
-            this.avgLatencyElement.textContent = '0 ms';
-        }
-        if (this.totalDataElement) {
-            this.totalDataElement.textContent = '0 KB';
-        }
-        if (this.handoverCountElement) {
-            this.handoverCountElement.textContent = '0';
+    updateSafetyMessageTracker(safetyStats) {
+        if (!safetyStats) {
+            console.log('UIManager: No safety stats provided to updateSafetyMessageTracker');
+            return;
         }
 
-        // Reset per-network statistics
-        Object.values(this.networkStatsElements).forEach(elements => {
-            if (elements.sent) elements.sent.textContent = '0';
-            if (elements.received) elements.received.textContent = '0';
-            if (elements.lost) elements.lost.textContent = '0';
+        console.log('UIManager: Updating Safety Message Tracker with stats:', safetyStats);
+
+        // Update total safety messages
+        const totalElement = document.getElementById('total-safety-messages');
+        if (totalElement) {
+            totalElement.textContent = safetyStats.total || 0;
+            console.log('Updated total safety messages:', safetyStats.total || 0);
+        }
+
+        // Calculate overall success rate
+        let totalSent = 0;
+        let totalSuccess = 0;
+
+        // Process per-network statistics and update simple tracker
+        Object.keys(safetyStats.networks || {}).forEach(networkType => {
+            const networkStats = safetyStats.networks[networkType];
+            const sent = networkStats.sent || 0;
+            const success = networkStats.success || 0;
+
+            totalSent += sent;
+            totalSuccess += success;
+
+            // Update network-specific success elements (matching our simple tracker)
+            const networkKey = networkType.toLowerCase();
+            const successElement = document.getElementById(`${networkKey}-safety-success`);
+            
+            if (successElement) {
+                successElement.textContent = success;
+                console.log(`Updated ${networkType} safety success:`, success);
+            } else {
+                console.warn(`Element ${networkKey}-safety-success not found`);
+            }
         });
+
+        // Update overall success rate
+        const overallSuccessRate = totalSent > 0 ? (totalSuccess / totalSent) * 100 : 0;
+        const successRateElement = document.getElementById('overall-safety-success');
+        if (successRateElement) {
+            successRateElement.textContent = `${overallSuccessRate.toFixed(1)}%`;
+            
+            // Color code overall success rate
+            if (overallSuccessRate >= 95) {
+                successRateElement.style.color = '#4CAF50'; // Green
+            } else if (overallSuccessRate >= 85) {
+                successRateElement.style.color = '#FFC107'; // Yellow
+            } else {
+                successRateElement.style.color = '#F44336'; // Red
+            }
+            
+            console.log('Updated overall safety success rate:', overallSuccessRate.toFixed(1) + '%');
+        }
+
+        // Store stats for tracking
+        this.safetyMessageStats = safetyStats;
+        
+        // Log for debugging
+        console.log('Safety Message Tracker updated successfully');
     }
 
     updateVehicleSummary(summary) {
