@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced V2X Network Simulation with RL</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Main Statistics Panel -->
+    <div class="info-panel">
+        <h3>Network Statistics</h3>
+        <div>Packets Sent: <span id="packets-sent">0</span></div>
+        <div>Packets Received: <span id="packets-received">0</span></div>
+        <div>Packets Lost: <span id="packets-lost">0</span></div>
+        <div>Avg Latency: <span id="avg-latency">0 ms</span></div>
+        <div>Total Data: <span id="total-data">0.00 KB</span></div>
+        <div>Handovers: <span id="handover-count">0</span></div>
+        <div>FPS: <span id="fps">0</span></div>
+        <div>AI Epsilon: <span id="ai-epsilon">100.0%</span></div>
+    </div>
+
+    <!-- Message Type Statistics Panel -->
+    <div class="message-type-panel">
+        <h3>Message Types</h3>
+        <div class="message-type-legend">
+            <div class="legend-item" id="safety-message-stats">
+                <div class="color-box" style="background: #ff0000;"></div>
+                <span>Safety (M1): <span class="count">0</span></span>
+            </div>
+            <div class="legend-item" id="basic-cam-stats">
+                <div class="color-box" style="background: #00ff00;"></div>
+                <span>CAM (M2): <span class="count">0</span></span>
+            </div>
+            <div class="legend-item" id="traffic-message-stats">
+                <div class="color-box" style="background: #ffa500;"></div>
+                <span>Traffic (M3): <span class="count">0</span></span>
+            </div>
+            <div class="legend-item" id="infotainment-stats">
+                <div class="color-box" style="background: #0080ff;"></div>
+                <span>Info (M4): <span class="count">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RL Learning Panel -->
+    <div class="rl-learning-panel">
+        <h3>RL Learning</h3>
+        <div>Total Reward: <span id="total-reward">0.00</span></div>
+        <div>Avg Reward: <span id="average-reward">0.000</span></div>
+        <div>Episodes: <span id="episode-count">0</span></div>
+        <div>Exploration: <span id="exploration-rate">100.0%</span></div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="learning-progress" style="width: 0%;"></div>
+            </div>
+            <span class="progress-label">Learning Progress</span>
+        </div>
+    </div>
+
+    <!-- Network Performance Panel -->
+    <div class="network-stats-panel">
+        <h3>Network Performance</h3>
+        <div class="network-stats" id="dsrc-stats">
+            <h4 style="color: #4CAF50;">DSRC</h4>
+            <div>Sent: <span class="sent">0</span></div>
+            <div>Received: <span class="received">0</span></div>
+            <div>Lost: <span class="lost">0</span></div>
+        </div>
+        <div class="network-stats" id="wifi-stats">
+            <h4 style="color: #2196F3;">WiFi</h4>
+            <div>Sent: <span class="sent">0</span></div>
+            <div>Received: <span class="received">0</span></div>
+            <div>Lost: <span class="lost">0</span></div>
+        </div>
+        <div class="network-stats" id="lte-stats">
+            <h4 style="color: #9C27B0;">LTE</h4>
+            <div>Sent: <span class="sent">0</span></div>
+            <div>Received: <span class="received">0</span></div>
+            <div>Lost: <span class="lost">0</span></div>
+        </div>
+    </div>
+
+    <!-- Vehicle Summary Panel -->
+    <div class="vehicle-summary-panel">
+        <h3>Vehicle Summary</h3>
+        <div class="summary-section">
+            <h4>Total Vehicles</h4>
+            <div class="summary-value" id="total-vehicles">0</div>
+        </div>
+        <div class="summary-section">
+            <h4>By Type</h4>
+            <div>Cars: <span id="car-count">0</span></div>
+            <div>Trucks: <span id="truck-count">0</span></div>
+            <div>Buses: <span id="bus-count">0</span></div>
+        </div>
+        <div class="summary-section">
+            <h4>Network Distribution</h4>
+            <div>DSRC: <span id="dsrc-vehicles">0</span></div>
+            <div>WiFi: <span id="wifi-vehicles">0</span></div>
+            <div>LTE: <span id="lte-vehicles">0</span></div>
+            <div>None: <span id="none-vehicles">0</span></div>
+        </div>
+        <div class="summary-section">
+            <h4>Message Distribution</h4>
+            <div>Safety: <span id="safety_message-vehicles">0</span></div>
+            <div>CAM: <span id="basic_cam_message-vehicles">0</span></div>
+            <div>Traffic: <span id="traffic_message-vehicles">0</span></div>
+            <div>Info: <span id="infotainment_message-vehicles">0</span></div>
+        </div>
+        <div class="summary-section">
+            <h4>RL Performance</h4>
+            <div>Avg Reward: <span id="vehicle-average-reward">0.000</span></div>
+            <div>Msg Changes: <span id="total-message-changes">0</span></div>
+        </div>
+    </div>
+
+    <!-- Vehicle Status Panel -->
+    <div class="vehicle-info-panel">
+        <h3>Live Vehicle Status</h3>
+        <div id="vehicle-status-container"></div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+        <button id="start-btn" class="button" disabled>Start Simulation</button>
+        <button id="stop-btn" class="button" disabled>Stop Simulation</button>
+    </div>
+
+    <!-- Import map for Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html> 
