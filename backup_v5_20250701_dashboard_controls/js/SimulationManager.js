@@ -9,6 +9,7 @@ import { ProcessingManager } from './processing/ProcessingManager.js';
 import { TrafficLightController } from './traffic/TrafficLightController.js';
 import { RSUAgent } from './ai/RSUAgent.js';
 import { AIManager } from './ai/AIManager.js';
+import { AIIntegration } from './ai/AIIntegration.js';
 
 export class SimulationManager {
     constructor() {
@@ -35,6 +36,9 @@ export class SimulationManager {
         
         // Enhanced AI systems
         this.rsuAgents = new Map();
+        
+        // New AI Integration for advanced features
+        this.aiIntegration = new AIIntegration();
         
         // Simulation state
         this.isRunning = false;
@@ -86,6 +90,9 @@ export class SimulationManager {
             
             // Initialize AI manager with simulation components
             this.aiManager.initialize(this.sceneManager, this.networkManager, this.vehicleManager);
+            
+            // Initialize new AI integration with simulation components
+            this.aiIntegration.integrate(this.networkManager, this.vehicleManager, this.sceneManager);
             
             // ProcessingManager needs positions for initialization
             if (this.processingManager.initializeProcessingUnits) {
@@ -255,6 +262,11 @@ export class SimulationManager {
             // AIManager update (if exists)
             if (this.aiManager && this.aiManager.update) {
                 this.aiManager.update(this.deltaTime);
+            }
+            
+            // New AI Integration update
+            if (this.aiIntegration && this.aiIntegration.update) {
+                this.aiIntegration.update(this.deltaTime);
             }
             
             // ProcessingManager update (if exists)
