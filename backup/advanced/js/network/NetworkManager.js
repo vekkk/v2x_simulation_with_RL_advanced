@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+// DISABLED: import * as THREE from 'three';
 import { CONFIG } from '../config/config.js';
 
 export class NetworkManager {

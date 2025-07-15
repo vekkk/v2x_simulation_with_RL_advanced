@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+// DISABLED: import * as THREE from 'three';
 import { CONFIG } from './config/config.js';
 import { SceneManager } from './visuals/SceneManager.js';
 import { VehicleManager } from './vehicles/VehicleManager.js';

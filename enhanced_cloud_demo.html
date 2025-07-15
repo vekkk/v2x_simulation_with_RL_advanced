@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Cloud-Based AI Demo - V2X Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #4CAF50;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            color: #4CAF50;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+
+        .left-panel {
+            flex: 1;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-right: 2px solid #4CAF50;
+        }
+
+        .right-panel {
+            flex: 1;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .feature-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #4CAF50;
+        }
+
+        .feature-section h3 {
+            color: #4CAF50;
+            margin-top: 0;
+            font-size: 1.5em;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #4CAF50;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .control-panel {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #f44336;
+        }
+
+        .control-panel h3 {
+            color: #f44336;
+            margin-top: 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e68900;
+            transform: translateY(-2px);
+        }
+
+        .log-container {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .log-info {
+            background: rgba(76, 175, 80, 0.2);
+            border-left: 3px solid #4CAF50;
+        }
+
+        .log-warning {
+            background: rgba(255, 152, 0, 0.2);
+            border-left: 3px solid #ff9800;
+        }
+
+        .log-error {
+            background: rgba(244, 67, 54, 0.2);
+            border-left: 3px solid #f44336;
+        }
+
+        .log-emergency {
+            background: rgba(255, 0, 0, 0.3);
+            border-left: 3px solid #ff0000;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .cloud-decision {
+            background: rgba(0, 150, 255, 0.2);
+            border-left: 3px solid #0096ff;
+        }
+
+        .monitoring-alert {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 3px solid #ffc107;
+        }
+
+        .feature-highlight {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .feature-highlight h4 {
+            margin: 0 0 10px 0;
+            font-size: 1.3em;
+        }
+
+        .feature-highlight p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-warning {
+            background: #ff9800;
+        }
+
+        .status-error {
+            background: #f44336;
+        }
+
+        .status-inactive {
+            background: #666;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>☁️ Enhanced Cloud-Based AI Demo</h1>
+        <p>Advanced V2X Simulation with Cloud-Based Decision Making, Safety Message Handling, and Periodic Packet Monitoring</p>
+    </div>
+
+    <div class="main-container">
+        <div class="left-panel">
+            <div class="feature-highlight">
+                <h4>🚀 Key Features</h4>
+                <p>Cloud-based AI decision making • Special safety message handling • Real-time packet monitoring • Emergency protocols</p>
+            </div>
+
+            <div class="feature-section">
+                <h3>☁️ Cloud-Based AI Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="cloud-decisions">0</div>
+                        <div class="stat-label">Cloud Decisions</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="safety-messages">0</div>
+                        <div class="stat-label">Safety Messages</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="emergency-protocols">0</div>
+                        <div class="stat-label">Emergency Protocols</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="periodic-alerts">0</div>
+                        <div class="stat-label">Monitoring Alerts</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-section">
+                <h3>📊 Network Performance</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="packets-sent">0</div>
+                        <div class="stat-label">Packets Sent</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="packets-received">0</div>
+                        <div class="stat-label">Packets Received</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="packet-loss-rate">0%</div>
+                        <div class="stat-label">Packet Loss Rate</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="avg-latency">0ms</div>
+                        <div class="stat-label">Average Latency</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-section">
+                <h3>🚨 Emergency Status</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="active-protocols">0</div>
+                        <div class="stat-label">Active Protocols</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="safety-queue">0</div>
+                        <div class="stat-label">Safety Queue</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="affected-vehicles">0</div>
+                        <div class="stat-label">Affected Vehicles</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="response-time">0ms</div>
+                        <div class="stat-label">Avg Response Time</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="control-panel">
+                <h3>🎮 Control Panel</h3>
+                <div class="button-group">
+                    <button class="btn btn-primary" id="start-demo">Start Demo</button>
+                    <button class="btn btn-danger" id="stop-demo">Stop Demo</button>
+                    <button class="btn btn-warning" id="trigger-emergency">🚨 Trigger Emergency</button>
+                    <button class="btn btn-primary" id="reset-stats">Reset Stats</button>
+                </div>
+            </div>
+
+            <div class="feature-section">
+                <h3>📡 System Status</h3>
+                <div style="margin-bottom: 10px;">
+                    <span class="status-indicator" id="cloud-status"></span>
+                    <span>Cloud AI: <span id="cloud-status-text">Initializing...</span></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span class="status-indicator" id="monitoring-status"></span>
+                    <span>Packet Monitoring: <span id="monitoring-status-text">Initializing...</span></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span class="status-indicator" id="safety-status"></span>
+                    <span>Safety Protocol: <span id="safety-status-text">Initializing...</span></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span class="status-indicator" id="network-status"></span>
+                    <span>Network Manager: <span id="network-status-text">Initializing...</span></span>
+                </div>
+            </div>
+
+            <div class="feature-section">
+                <h3>📝 Real-Time Log</h3>
+                <div class="log-container" id="log-container">
+                    <div class="log-entry log-info">System initializing...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        let demoRunning = false;
+        let demoInterval = null;
+        let logContainer = null;
+        let stats = {
+            cloudDecisions: 0,
+            safetyMessages: 0,
+            emergencyProtocols: 0,
+            periodicAlerts: 0,
+            packetsSent: 0,
+            packetsReceived: 0,
+            packetLossRate: 0,
+            avgLatency: 0,
+            activeProtocols: 0,
+            safetyQueue: 0,
+            affectedVehicles: 0,
+            responseTime: 0
+        };
+
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            logContainer = document.getElementById('log-container');
+            
+            addLog('Enhanced Cloud-Based AI Demo initialized', 'info');
+            addLog('Loading AI components...', 'info');
+            
+            try {
+                // Simulate AI component loading
+                await simulateAILoading();
+                
+                updateStatus('cloud-status', 'active', 'Cloud AI: Active');
+                updateStatus('monitoring-status', 'active', 'Packet Monitoring: Active');
+                updateStatus('safety-status', 'active', 'Safety Protocol: Active');
+                updateStatus('network-status', 'active', 'Network Manager: Active');
+                
+                addLog('✅ All AI components loaded successfully', 'info');
+                addLog('🚀 Ready to start enhanced cloud-based simulation', 'info');
+                
+            } catch (error) {
+                addLog('❌ Failed to initialize AI components: ' + error.message, 'error');
+            }
+        });
+
+        // Simulate AI component loading
+        async function simulateAILoading() {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    addLog('☁️ CloudAssessmentAI: Initializing advanced cloud assessment...', 'info');
+                    setTimeout(() => {
+                        addLog('✅ CloudAssessmentAI initialized with cloud-based decision making', 'info');
+                        setTimeout(() => {
+                            addLog('🤖 BaseStationAI: Initializing Q-learning algorithm...', 'info');
+                            setTimeout(() => {
+                                addLog('✅ BaseStationAI initialized with reinforcement learning', 'info');
+                                setTimeout(() => {
+                                    addLog('📡 EnhancedNetworkManager: Initializing with cloud integration...', 'info');
+                                    setTimeout(() => {
+                                        addLog('✅ EnhancedNetworkManager initialized with safety message handling', 'info');
+                                        resolve();
+                                    }, 500);
+                                }, 500);
+                            }, 500);
+                        }, 500);
+                    }, 500);
+                }, 1000);
+            });
+        }
+
+        // Start demo
+        document.getElementById('start-demo').addEventListener('click', () => {
+            if (!demoRunning) {
+                startDemo();
+            }
+        });
+
+        // Stop demo
+        document.getElementById('stop-demo').addEventListener('click', () => {
+            if (demoRunning) {
+                stopDemo();
+            }
+        });
+
+        // Trigger emergency
+        document.getElementById('trigger-emergency').addEventListener('click', () => {
+            triggerEmergency();
+        });
+
+        // Reset stats
+        document.getElementById('reset-stats').addEventListener('click', () => {
+            resetStats();
+        });
+
+        function startDemo() {
+            demoRunning = true;
+            addLog('🚀 Starting enhanced cloud-based simulation...', 'info');
+            
+            // Update button states
+            document.getElementById('start-demo').disabled = true;
+            document.getElementById('stop-demo').disabled = false;
+            
+            // Start simulation loop
+            demoInterval = setInterval(() => {
+                simulateNetworkActivity();
+                updateStats();
+            }, 1000);
+            
+            addLog('✅ Enhanced simulation started with cloud-based AI', 'info');
+        }
+
+        function stopDemo() {
+            demoRunning = false;
+            addLog('⏹️ Stopping enhanced simulation...', 'info');
+            
+            if (demoInterval) {
+                clearInterval(demoInterval);
+                demoInterval = null;
+            }
+            
+            // Update button states
+            document.getElementById('start-demo').disabled = false;
+            document.getElementById('stop-demo').disabled = true;
+            
+            addLog('✅ Enhanced simulation stopped', 'info');
+        }
+
+        function simulateNetworkActivity() {
+            // Simulate packet transmission
+            const packetsSent = Math.floor(Math.random() * 10) + 5;
+            const packetSuccess = Math.random() > 0.1; // 90% success rate
+            const packetsReceived = packetSuccess ? packetsSent : Math.floor(packetsSent * 0.8);
+            
+            stats.packetsSent += packetsSent;
+            stats.packetsReceived += packetsReceived;
+            stats.packetLossRate = ((stats.packetsSent - stats.packetsReceived) / stats.packetsSent * 100).toFixed(1);
+            stats.avgLatency = Math.floor(Math.random() * 50) + 20;
+            
+            // Simulate cloud decisions
+            if (Math.random() < 0.3) {
+                stats.cloudDecisions++;
+                addLog(`☁️ Cloud AI made network optimization decision (confidence: ${(Math.random() * 0.3 + 0.7).toFixed(2)})`, 'cloud-decision');
+            }
+            
+            // Simulate safety messages
+            if (Math.random() < 0.1) {
+                stats.safetyMessages++;
+                addLog(`🚨 Safety message detected from vehicle ${Math.floor(Math.random() * 100) + 1}`, 'log-emergency');
+            }
+            
+            // Simulate emergency protocols
+            if (Math.random() < 0.05) {
+                stats.emergencyProtocols++;
+                stats.activeProtocols = Math.min(stats.activeProtocols + 1, 5);
+                addLog(`🚨 Emergency protocol activated: COLLISION_AVOIDANCE`, 'log-emergency');
+            }
+            
+            // Simulate periodic monitoring alerts
+            if (Math.random() < 0.2) {
+                stats.periodicAlerts++;
+                addLog(`⚠️ Monitoring alert: High packet loss detected`, 'monitoring-alert');
+            }
+            
+            // Update safety queue
+            stats.safetyQueue = Math.floor(Math.random() * 10);
+            stats.affectedVehicles = Math.floor(Math.random() * 20) + 5;
+            stats.responseTime = Math.floor(Math.random() * 100) + 50;
+        }
+
+        function triggerEmergency() {
+            addLog(`🚨 EMERGENCY TRIGGERED: Critical safety message from vehicle ${Math.floor(Math.random() * 100) + 1}`, 'log-emergency');
+            
+            stats.safetyMessages++;
+            stats.emergencyProtocols++;
+            stats.activeProtocols = Math.min(stats.activeProtocols + 1, 5);
+            
+            // Simulate emergency broadcast
+            setTimeout(() => {
+                addLog(`📡 Emergency broadcast sent to ${Math.floor(Math.random() * 15) + 5} nearby vehicles`, 'log-emergency');
+            }, 500);
+            
+            setTimeout(() => {
+                addLog(`✅ Emergency protocol response time: ${Math.floor(Math.random() * 200) + 100}ms`, 'log-info');
+            }, 1000);
+        }
+
+        function resetStats() {
+            stats = {
+                cloudDecisions: 0,
+                safetyMessages: 0,
+                emergencyProtocols: 0,
+                periodicAlerts: 0,
+                packetsSent: 0,
+                packetsReceived: 0,
+                packetLossRate: 0,
+                avgLatency: 0,
+                activeProtocols: 0,
+                safetyQueue: 0,
+                affectedVehicles: 0,
+                responseTime: 0
+            };
+            
+            updateStats();
+            addLog('🔄 Statistics reset', 'info');
+        }
+
+        function updateStats() {
+            document.getElementById('cloud-decisions').textContent = stats.cloudDecisions;
+            document.getElementById('safety-messages').textContent = stats.safetyMessages;
+            document.getElementById('emergency-protocols').textContent = stats.emergencyProtocols;
+            document.getElementById('periodic-alerts').textContent = stats.periodicAlerts;
+            document.getElementById('packets-sent').textContent = stats.packetsSent;
+            document.getElementById('packets-received').textContent = stats.packetsReceived;
+            document.getElementById('packet-loss-rate').textContent = stats.packetLossRate + '%';
+            document.getElementById('avg-latency').textContent = stats.avgLatency + 'ms';
+            document.getElementById('active-protocols').textContent = stats.activeProtocols;
+            document.getElementById('safety-queue').textContent = stats.safetyQueue;
+            document.getElementById('affected-vehicles').textContent = stats.affectedVehicles;
+            document.getElementById('response-time').textContent = stats.responseTime + 'ms';
+        }
+
+        function updateStatus(elementId, status, text) {
+            const indicator = document.getElementById(elementId);
+            const textElement = document.getElementById(elementId.replace('-status', '-status-text'));
+            
+            indicator.className = 'status-indicator status-' + status;
+            textElement.textContent = text;
+        }
+
+        function addLog(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Keep only last 50 entries
+            while (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+        }
+
+        // Initialize button states
+        document.getElementById('stop-demo').disabled = true;
+    </script>
+</body>
+</html> 

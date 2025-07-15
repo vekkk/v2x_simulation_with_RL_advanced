@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V2X AI Features Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #2d2d2d;
+            border-radius: 10px;
+            border: 2px solid #4CAF50;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .feature-card {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #4CAF50;
+        }
+        .feature-card h3 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        .message-types {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .message-type {
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .safety { background: #ff4444; color: white; }
+        .cam { background: #44ff44; color: black; }
+        .traffic { background: #ffaa44; color: black; }
+        .infotainment { background: #4444ff; color: white; }
+        .stats {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        .button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #45a049;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success { background: #4CAF50; }
+        .status.warning { background: #ff9800; }
+        .status.error { background: #f44336; }
+        .ai-report {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 V2X AI Features Test Dashboard</h1>
+            <p>Testing Enhanced AI Components: Cloud Assessment, Message Routing, and Emergency Handling</p>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>📡 4 Message Types</h3>
+                <div class="message-types">
+                    <div class="message-type safety">SAFETY_MESSAGE<br>Emergency Alerts</div>
+                    <div class="message-type cam">BASIC_CAM_MESSAGE<br>Vehicle Awareness</div>
+                    <div class="message-type traffic">TRAFFIC_MESSAGE<br>Traffic Information</div>
+                    <div class="message-type infotainment">INFOTAINMENT_MESSAGE<br>Non-Critical Data</div>
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span>Total Messages:</span>
+                        <span id="total-messages">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>V2V Messages:</span>
+                        <span id="v2v-messages">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>V2I Messages:</span>
+                        <span id="v2i-messages">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <h3>🚨 Emergency Message Handling</h3>
+                <p>Special routing: RSU → Base Station → Broadcast</p>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span>Emergency Messages:</span>
+                        <span id="emergency-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Completed:</span>
+                        <span id="emergency-completed">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>In Progress:</span>
+                        <span id="emergency-progress">0</span>
+                    </div>
+                </div>
+                <button class="button" onclick="triggerEmergency()">Trigger Emergency</button>
+            </div>
+
+            <div class="feature-card">
+                <h3>☁️ Cloud Assessment AI</h3>
+                <p>Real-time assessment of RSUs, roads, vehicles, and networks</p>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span>RSU Efficiency:</span>
+                        <span id="rsu-efficiency">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Network Quality:</span>
+                        <span id="network-quality">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Active Alerts:</span>
+                        <span id="active-alerts">0</span>
+                    </div>
+                </div>
+                <button class="button" onclick="getCloudReport()">Get Assessment Report</button>
+            </div>
+
+            <div class="feature-card">
+                <h3>📊 Per-Vehicle Analytics</h3>
+                <p>Cross-session packet tracking and performance metrics</p>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span>Vehicles Tracked:</span>
+                        <span id="vehicles-tracked">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Avg Reliability:</span>
+                        <span id="avg-reliability">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Success Rate:</span>
+                        <span id="success-rate">0%</span>
+                    </div>
+                </div>
+                <button class="button" onclick="getVehicleStats()">Get Vehicle Stats</button>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <h3>🔍 AI Integration Status</h3>
+            <div id="ai-status" class="status warning">Checking AI Integration...</div>
+            <div class="ai-report" id="ai-report">
+                <p>AI components will be loaded when simulation starts...</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <h3>🎮 Test Controls</h3>
+            <button class="button" onclick="startSimulation()">Start Simulation</button>
+            <button class="button" onclick="stopSimulation()">Stop Simulation</button>
+            <button class="button" onclick="resetAI()">Reset AI</button>
+            <button class="button" onclick="getFullReport()">Get Full Report</button>
+        </div>
+    </div>
+
+    <script>
+        let simulationManager = null;
+        let updateInterval = null;
+
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            try {
+                // Import the simulation manager with proper path
+                const { SimulationManager } = await import('./js/SimulationManager.js');
+                simulationManager = new SimulationManager();
+                
+                // Initialize the simulation
+                const success = await simulationManager.initialize();
+                if (success) {
+                    document.getElementById('ai-status').className = 'status success';
+                    document.getElementById('ai-status').textContent = '✅ AI Integration Ready';
+                    console.log('✅ V2X AI Features Test Dashboard Ready');
+                } else {
+                    document.getElementById('ai-status').className = 'status error';
+                    document.getElementById('ai-status').textContent = '❌ AI Integration Failed';
+                }
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+                document.getElementById('ai-status').className = 'status error';
+                document.getElementById('ai-status').textContent = '❌ Initialization Error: ' + error.message;
+                
+                // Show more detailed error information
+                document.getElementById('ai-report').innerHTML = 
+                    '<h4>Error Details:</h4>' + 
+                    '<p><strong>Error:</strong> ' + error.message + '</p>' +
+                    '<p><strong>Stack:</strong> ' + error.stack + '</p>' +
+                    '<p><strong>Note:</strong> This might be due to module import issues. Try using the main simulation instead.</p>';
+            }
+        });
+
+        function startSimulation() {
+            if (simulationManager) {
+                simulationManager.start();
+                updateInterval = setInterval(updateDashboard, 1000);
+                console.log('🚀 Simulation started');
+            }
+        }
+
+        function stopSimulation() {
+            if (simulationManager) {
+                simulationManager.stop();
+                if (updateInterval) {
+                    clearInterval(updateInterval);
+                    updateInterval = null;
+                }
+                console.log('⏹️ Simulation stopped');
+            }
+        }
+
+        function resetAI() {
+            if (simulationManager && simulationManager.aiIntegration) {
+                simulationManager.aiIntegration.reset();
+                console.log('🔄 AI components reset');
+            }
+        }
+
+        function triggerEmergency() {
+            if (simulationManager && simulationManager.aiIntegration) {
+                // Simulate emergency message
+                const emergencyMessage = {
+                    type: 'SAFETY_MESSAGE',
+                    priority: 1,
+                    timestamp: Date.now()
+                };
+                console.log('🚨 Emergency message triggered');
+            }
+        }
+
+        function getCloudReport() {
+            if (simulationManager && simulationManager.aiIntegration) {
+                const report = simulationManager.aiIntegration.getCloudAssessmentAlerts();
+                document.getElementById('ai-report').innerHTML = 
+                    '<h4>Cloud Assessment Alerts:</h4>' + 
+                    JSON.stringify(report, null, 2);
+            }
+        }
+
+        function getVehicleStats() {
+            if (simulationManager && simulationManager.aiIntegration) {
+                const stats = simulationManager.aiIntegration.getMessageTypeVisibility();
+                document.getElementById('ai-report').innerHTML = 
+                    '<h4>Message Type Visibility:</h4>' + 
+                    JSON.stringify(stats, null, 2);
+            }
+        }
+
+        function getFullReport() {
+            if (simulationManager && simulationManager.aiIntegration) {
+                const report = simulationManager.aiIntegration.getAIReport();
+                document.getElementById('ai-report').innerHTML = 
+                    '<h4>Full AI Report:</h4>' + 
+                    JSON.stringify(report, null, 2);
+            }
+        }
+
+        function updateDashboard() {
+            if (!simulationManager || !simulationManager.aiIntegration) return;
+
+            try {
+                // Update message routing stats
+                const routingMetrics = simulationManager.aiIntegration.messageRouter.getRoutingMetrics();
+                document.getElementById('total-messages').textContent = routingMetrics.totalMessages;
+                document.getElementById('v2v-messages').textContent = routingMetrics.v2vMessages;
+                document.getElementById('v2i-messages').textContent = routingMetrics.v2iMessages;
+
+                // Update emergency stats
+                const emergencyStats = simulationManager.aiIntegration.getEmergencyMessageStats();
+                document.getElementById('emergency-count').textContent = emergencyStats.total;
+                document.getElementById('emergency-completed').textContent = emergencyStats.completed;
+                document.getElementById('emergency-progress').textContent = emergencyStats.inProgress;
+
+                // Update cloud assessment stats
+                const cloudReport = simulationManager.aiIntegration.cloudAssessment.getAssessmentReport();
+                const rsuEfficiency = Object.values(cloudReport.realTimeMetrics.rsuEfficiency || {});
+                const avgRSUEfficiency = rsuEfficiency.length > 0 ? 
+                    (rsuEfficiency.reduce((a, b) => a + b, 0) / rsuEfficiency.length).toFixed(1) : 0;
+                
+                document.getElementById('rsu-efficiency').textContent = avgRSUEfficiency + '%';
+                
+                const networkQuality = Object.values(cloudReport.realTimeMetrics.networkQuality || {});
+                const avgNetworkQuality = networkQuality.length > 0 ? 
+                    (networkQuality.reduce((a, b) => a + b, 0) / networkQuality.length).toFixed(1) : 0;
+                
+                document.getElementById('network-quality').textContent = avgNetworkQuality + '%';
+                document.getElementById('active-alerts').textContent = cloudReport.alerts.length;
+
+                // Update vehicle stats
+                const vehicleStats = Object.keys(cloudReport.vehicleAssessments).length;
+                document.getElementById('vehicles-tracked').textContent = vehicleStats;
+                
+                const vehicleReliabilities = Object.values(cloudReport.vehicleAssessments)
+                    .map(v => v.reliability || 0);
+                const avgReliability = vehicleReliabilities.length > 0 ? 
+                    (vehicleReliabilities.reduce((a, b) => a + b, 0) / vehicleReliabilities.length).toFixed(1) : 0;
+                
+                document.getElementById('avg-reliability').textContent = avgReliability + '%';
+                document.getElementById('success-rate').textContent = routingMetrics.successRate.toFixed(1) + '%';
+
+            } catch (error) {
+                console.error('Dashboard update error:', error);
+            }
+        }
+    </script>
+</body>
+</html> 

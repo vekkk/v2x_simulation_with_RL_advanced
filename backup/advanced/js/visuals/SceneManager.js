@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+// DISABLED: import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CONFIG } from '../config/config.js';
 

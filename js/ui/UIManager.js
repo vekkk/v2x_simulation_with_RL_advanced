@@ -15,22 +15,27 @@ export class UIManager {
         this.vehicleStatusContainer = document.getElementById('vehicle-status-container');
         this.aiEpsilonElement = document.getElementById('ai-epsilon');
         
+        // New AI decision stats elements
+        this.safetyMessagesElement = document.getElementById('safety-messages');
+        this.cloudDecisionsElement = document.getElementById('cloud-decisions');
+        this.emergencyProtocolsElement = document.getElementById('emergency-protocols');
+        
         // Per-network stats elements
         this.networkStatsElements = {
             DSRC: {
-                sent: document.querySelector('#dsrc-stats .sent'),
-                received: document.querySelector('#dsrc-stats .received'),
-                lost: document.querySelector('#dsrc-stats .lost')
+                sent: document.getElementById('dsrc-sent'),
+                received: document.getElementById('dsrc-received'),
+                lost: document.getElementById('dsrc-lost')
             },
             WIFI: {
-                sent: document.querySelector('#wifi-stats .sent'),
-                received: document.querySelector('#wifi-stats .received'),
-                lost: document.querySelector('#wifi-stats .lost')
+                sent: document.getElementById('wifi-sent'),
+                received: document.getElementById('wifi-received'),
+                lost: document.getElementById('wifi-lost')
             },
             LTE: {
-                sent: document.querySelector('#lte-stats .sent'),
-                received: document.querySelector('#lte-stats .received'),
-                lost: document.querySelector('#lte-stats .lost')
+                sent: document.getElementById('lte-sent'),
+                received: document.getElementById('lte-received'),
+                lost: document.getElementById('lte-lost')
             }
         };
 
@@ -148,6 +153,20 @@ export class UIManager {
         if (this.handoverCountElement) {
             this.handoverCountElement.textContent = stats.handoverCount;
             console.log('Updated handover count:', stats.handoverCount);
+        }
+        
+        // Update AI decision statistics
+        if (this.safetyMessagesElement) {
+            this.safetyMessagesElement.textContent = stats.safetyMessages || 0;
+            console.log('Updated safety messages:', stats.safetyMessages || 0);
+        }
+        if (this.cloudDecisionsElement) {
+            this.cloudDecisionsElement.textContent = stats.cloudDecisions || 0;
+            console.log('Updated cloud decisions:', stats.cloudDecisions || 0);
+        }
+        if (this.emergencyProtocolsElement) {
+            this.emergencyProtocolsElement.textContent = stats.emergencyProtocols || 0;
+            console.log('Updated emergency protocols:', stats.emergencyProtocols || 0);
         }
     }
 

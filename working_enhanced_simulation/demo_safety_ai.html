@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V2X Safety Message & Base Station AI Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+            border-radius: 15px;
+            border: 3px solid #ff4444;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+        }
+        .header h1 {
+            color: #ff4444;
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+        }
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .demo-card {
+            background: linear-gradient(135deg, #2d2d2d, #333);
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #4CAF50;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .demo-card h2 {
+            color: #4CAF50;
+            margin-top: 0;
+            font-size: 1.8em;
+            text-align: center;
+        }
+        .safety-flow {
+            background: linear-gradient(135deg, #2d2d2d, #333);
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #ff4444;
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.2);
+            margin-bottom: 30px;
+        }
+        .safety-flow h2 {
+            color: #ff4444;
+            margin-top: 0;
+            font-size: 1.8em;
+            text-align: center;
+        }
+        .flow-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+        .flow-step {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: #333;
+            border: 2px solid #666;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        .flow-step.active {
+            border-color: #ff4444;
+            background: #ff4444;
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.6);
+        }
+        .flow-arrow {
+            font-size: 2em;
+            color: #666;
+            margin: 0 10px;
+        }
+        .flow-arrow.active {
+            color: #ff4444;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-item {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #555;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            color: #ccc;
+            margin-top: 5px;
+        }
+        .ai-decision {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .ai-decision h4 {
+            color: #4CAF50;
+            margin: 0 0 10px 0;
+        }
+        .decision-log {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .log-entry.safety { background: rgba(255, 68, 68, 0.2); border-left: 3px solid #ff4444; }
+        .log-entry.ai { background: rgba(76, 175, 80, 0.2); border-left: 3px solid #4CAF50; }
+        .log-entry.info { background: rgba(33, 150, 243, 0.2); border-left: 3px solid #2196F3; }
+        .button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        .button.emergency {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+        }
+        .button.emergency:hover {
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.4);
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: blink 2s infinite;
+        }
+        .status-indicator.active {
+            background: #4CAF50;
+        }
+        .status-indicator.inactive {
+            background: #666;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        .real-time-feed {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #555;
+        }
+        .real-time-feed h3 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        .feed-content {
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .feed-entry {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 3px solid #666;
+        }
+        .feed-entry.safety { border-left-color: #ff4444; background: rgba(255, 68, 68, 0.1); }
+        .feed-entry.ai { border-left-color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
+        .feed-entry.network { border-left-color: #2196F3; background: rgba(33, 150, 243, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 V2X Safety Message & Base Station AI Demo</h1>
+            <p>Demonstrating Emergency Message Transportation and Intelligent Base Station AI Decision Making</p>
+        </div>
+
+        <div class="safety-flow">
+            <h2>🚨 Safety Message Transportation Flow</h2>
+            <div class="flow-diagram">
+                <div class="flow-step" id="step-vehicle">
+                    <div style="font-size: 2em;">🚗</div>
+                    <div>Vehicle</div>
+                    <div>Emergency Detected</div>
+                </div>
+                <div class="flow-arrow" id="arrow-1">→</div>
+                <div class="flow-step" id="step-rsu">
+                    <div style="font-size: 2em;">📡</div>
+                    <div>RSU</div>
+                    <div>Message Received</div>
+                </div>
+                <div class="flow-arrow" id="arrow-2">→</div>
+                <div class="flow-step" id="step-base">
+                    <div style="font-size: 2em;">🏢</div>
+                    <div>Base Station</div>
+                    <div>AI Processing</div>
+                </div>
+                <div class="flow-arrow" id="arrow-3">→</div>
+                <div class="flow-step" id="step-broadcast">
+                    <div style="font-size: 2em;">📢</div>
+                    <div>Broadcast</div>
+                    <div>All Vehicles Alerted</div>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="safety-count">0</div>
+                    <div class="stat-label">Safety Messages</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="response-time">0ms</div>
+                    <div class="stat-label">Response Time</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="success-rate">0%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="vehicles-alerted">0</div>
+                    <div class="stat-label">Vehicles Alerted</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h2>🧠 Base Station AI</h2>
+                <div class="ai-decision">
+                    <h4>Current AI Decision:</h4>
+                    <div id="current-decision">Waiting for emergency message...</div>
+                </div>
+                <div class="ai-decision">
+                    <h4>AI Learning Status:</h4>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="ai-confidence">0%</div>
+                            <div class="stat-label">Confidence</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="ai-reward">0</div>
+                            <div class="stat-label">Total Reward</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="ai-epsilon">1.0</div>
+                            <div class="stat-label">Exploration Rate</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ai-decision">
+                    <h4>AI Decision Log:</h4>
+                    <div class="decision-log" id="ai-log">
+                        <div class="log-entry info">AI system initialized...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="demo-card">
+                <h2>📊 Real-Time Analytics</h2>
+                <div class="real-time-feed">
+                    <h3>Live Message Feed</h3>
+                    <div class="feed-content" id="message-feed">
+                        <div class="feed-entry info">System ready for safety message demonstration...</div>
+                    </div>
+                </div>
+                <div class="real-time-feed">
+                    <h3>Network Performance</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="network-quality">100%</div>
+                            <div class="stat-label">Network Quality</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="packet-loss">0%</div>
+                            <div class="stat-label">Packet Loss</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="latency">0ms</div>
+                            <div class="stat-label">Average Latency</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="button emergency" onclick="triggerEmergency()">
+                🚨 Trigger Emergency Message
+            </button>
+            <button class="button" onclick="startDemo()">
+                ▶️ Start Demo Mode
+            </button>
+            <button class="button" onclick="stopDemo()">
+                ⏹️ Stop Demo
+            </button>
+            <button class="button" onclick="resetDemo()">
+                🔄 Reset Demo
+            </button>
+        </div>
+
+        <div class="demo-card">
+            <h2>📈 Demo Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="total-messages">0</div>
+                    <div class="stat-label">Total Messages</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="ai-decisions">0</div>
+                    <div class="stat-label">AI Decisions Made</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="demo-duration">0s</div>
+                    <div class="stat-label">Demo Duration</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="system-status">Ready</div>
+                    <div class="stat-label">System Status</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        let demoRunning = false;
+        let demoStartTime = 0;
+        let safetyMessageCount = 0;
+        let aiDecisionCount = 0;
+        let updateInterval = null;
+
+        // Import AI components
+        let cloudAssessment = null;
+        let messageRouter = null;
+        let baseStationAI = null;
+
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            try {
+                // Import AI components
+                const { CloudAssessmentAI } = await import('./js/ai/CloudAssessmentAI.js');
+                const { MessageRouterAI } = await import('./js/ai/MessageRouterAI.js');
+                const { BaseStationAI } = await import('./js/ai/BaseStationAI.js');
+                
+                // Initialize components
+                cloudAssessment = new CloudAssessmentAI();
+                messageRouter = new MessageRouterAI();
+                baseStationAI = new BaseStationAI();
+                
+                addToFeed('AI components loaded successfully', 'info');
+                addToAILog('Base Station AI initialized and ready for emergency message processing');
+                
+                console.log('✅ Safety Message & Base Station AI Demo Ready');
+                
+            } catch (error) {
+                console.error('Failed to initialize AI components:', error);
+                addToFeed('Failed to load AI components: ' + error.message, 'info');
+            }
+        });
+
+        window.triggerEmergency = function() {
+            if (!messageRouter || !baseStationAI) {
+                addToFeed('AI components not ready yet', 'info');
+                return;
+            }
+
+            safetyMessageCount++;
+            
+            // Create mock emergency vehicle
+            const emergencyVehicle = {
+                userData: { 
+                    id: `emergency_vehicle_${safetyMessageCount}`,
+                    speed: 25,
+                    position: { x: Math.random() * 100, y: 0, z: Math.random() * 100 }
+                },
+                position: { x: Math.random() * 100, y: 0, z: Math.random() * 100 }
+            };
+
+            // Start safety message flow animation
+            animateSafetyFlow();
+
+            // Route emergency message
+            const routingInfo = messageRouter.routeMessage(emergencyVehicle, 'SAFETY_MESSAGE', 'DSRC');
+            
+            // Simulate AI decision making
+            const aiDecision = simulateAIDecision(emergencyVehicle, routingInfo);
+            
+            // Update statistics
+            updateSafetyStats();
+            
+            // Add to feeds
+            addToFeed(`🚨 Emergency message triggered by vehicle ${emergencyVehicle.userData.id}`, 'safety');
+            addToAILog(`AI Decision: ${aiDecision.decision} (Confidence: ${aiDecision.confidence}%)`);
+            
+            console.log('🚨 Emergency message triggered:', routingInfo);
+        };
+
+        window.startDemo = function() {
+            if (demoRunning) return;
+            
+            demoRunning = true;
+            demoStartTime = Date.now();
+            
+            // Start periodic updates
+            updateInterval = setInterval(updateDemo, 1000);
+            
+            addToFeed('Demo mode started - AI system active', 'info');
+            addToAILog('Demo mode activated - Base Station AI monitoring for emergency messages');
+            
+            document.getElementById('system-status').textContent = 'Running';
+        };
+
+        window.stopDemo = function() {
+            if (!demoRunning) return;
+            
+            demoRunning = false;
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+            
+            addToFeed('Demo mode stopped', 'info');
+            addToAILog('Demo mode deactivated');
+            
+            document.getElementById('system-status').textContent = 'Stopped';
+        };
+
+        window.resetDemo = function() {
+            stopDemo();
+            
+            safetyMessageCount = 0;
+            aiDecisionCount = 0;
+            
+            // Reset all statistics
+            document.getElementById('safety-count').textContent = '0';
+            document.getElementById('response-time').textContent = '0ms';
+            document.getElementById('success-rate').textContent = '0%';
+            document.getElementById('vehicles-alerted').textContent = '0';
+            document.getElementById('ai-confidence').textContent = '0%';
+            document.getElementById('ai-reward').textContent = '0';
+            document.getElementById('ai-epsilon').textContent = '1.0';
+            document.getElementById('total-messages').textContent = '0';
+            document.getElementById('ai-decisions').textContent = '0';
+            document.getElementById('demo-duration').textContent = '0s';
+            document.getElementById('system-status').textContent = 'Ready';
+            
+            // Clear feeds
+            document.getElementById('message-feed').innerHTML = '<div class="feed-entry info">System reset - ready for new demo...</div>';
+            document.getElementById('ai-log').innerHTML = '<div class="log-entry info">AI system reset...</div>';
+            
+            // Reset flow animation
+            resetFlowAnimation();
+            
+            addToFeed('Demo reset - all statistics cleared', 'info');
+        };
+
+        function animateSafetyFlow() {
+            const steps = ['step-vehicle', 'step-rsu', 'step-base', 'step-broadcast'];
+            const arrows = ['arrow-1', 'arrow-2', 'arrow-3'];
+            
+            // Reset all steps
+            steps.forEach(step => {
+                document.getElementById(step).classList.remove('active');
+            });
+            arrows.forEach(arrow => {
+                document.getElementById(arrow).classList.remove('active');
+            });
+            
+            // Animate each step
+            steps.forEach((step, index) => {
+                setTimeout(() => {
+                    document.getElementById(step).classList.add('active');
+                    if (index < arrows.length) {
+                        document.getElementById(arrows[index]).classList.add('active');
+                    }
+                }, index * 800);
+            });
+            
+            // Reset after animation
+            setTimeout(() => {
+                resetFlowAnimation();
+            }, 4000);
+        }
+
+        function resetFlowAnimation() {
+            const steps = ['step-vehicle', 'step-rsu', 'step-base', 'step-broadcast'];
+            const arrows = ['arrow-1', 'arrow-2', 'arrow-3'];
+            
+            steps.forEach(step => {
+                document.getElementById(step).classList.remove('active');
+            });
+            arrows.forEach(arrow => {
+                document.getElementById(arrow).classList.remove('active');
+            });
+        }
+
+        function simulateAIDecision(vehicle, routingInfo) {
+            aiDecisionCount++;
+            
+            // Simulate AI decision making
+            const decisions = [
+                'Route via DSRC for minimum latency',
+                'Use LTE backup for reliability',
+                'Prioritize emergency broadcast',
+                'Optimize network selection',
+                'Apply emergency routing protocol'
+            ];
+            
+            const decision = decisions[Math.floor(Math.random() * decisions.length)];
+            const confidence = 85 + Math.random() * 15; // 85-100% confidence
+            
+            // Update AI statistics
+            const aiReward = baseStationAI.totalReward || 0;
+            const aiEpsilon = baseStationAI.epsilon || 1.0;
+            
+            document.getElementById('ai-confidence').textContent = confidence.toFixed(1) + '%';
+            document.getElementById('ai-reward').textContent = (aiReward + 10).toFixed(0);
+            document.getElementById('ai-epsilon').textContent = aiEpsilon.toFixed(3);
+            document.getElementById('current-decision').textContent = decision;
+            
+            return { decision, confidence };
+        }
+
+        function updateSafetyStats() {
+            const responseTime = 15 + Math.random() * 35; // 15-50ms
+            const successRate = 95 + Math.random() * 5; // 95-100%
+            const vehiclesAlerted = 8 + Math.floor(Math.random() * 12); // 8-20 vehicles
+            
+            document.getElementById('safety-count').textContent = safetyMessageCount;
+            document.getElementById('response-time').textContent = responseTime.toFixed(0) + 'ms';
+            document.getElementById('success-rate').textContent = successRate.toFixed(1) + '%';
+            document.getElementById('vehicles-alerted').textContent = vehiclesAlerted;
+        }
+
+        function updateDemo() {
+            if (!demoRunning) return;
+            
+            const duration = Math.floor((Date.now() - demoStartTime) / 1000);
+            document.getElementById('demo-duration').textContent = duration + 's';
+            document.getElementById('total-messages').textContent = safetyMessageCount;
+            document.getElementById('ai-decisions').textContent = aiDecisionCount;
+            
+            // Update network performance
+            const networkQuality = 90 + Math.random() * 10;
+            const packetLoss = Math.random() * 5;
+            const latency = 20 + Math.random() * 30;
+            
+            document.getElementById('network-quality').textContent = networkQuality.toFixed(1) + '%';
+            document.getElementById('packet-loss').textContent = packetLoss.toFixed(1) + '%';
+            document.getElementById('latency').textContent = latency.toFixed(0) + 'ms';
+        }
+
+        function addToFeed(message, type) {
+            const feed = document.getElementById('message-feed');
+            const entry = document.createElement('div');
+            entry.className = `feed-entry ${type}`;
+            entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            feed.appendChild(entry);
+            feed.scrollTop = feed.scrollHeight;
+            
+            // Keep only last 20 entries
+            while (feed.children.length > 20) {
+                feed.removeChild(feed.firstChild);
+            }
+        }
+
+        function addToAILog(message) {
+            const log = document.getElementById('ai-log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ai';
+            entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            
+            // Keep only last 10 entries
+            while (log.children.length > 10) {
+                log.removeChild(log.firstChild);
+            }
+        }
+    </script>
+</body>
+</html> 

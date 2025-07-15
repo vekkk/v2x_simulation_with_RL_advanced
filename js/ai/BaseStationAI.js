@@ -1,5 +1,8 @@
+console.log('🔍 DEBUG: BaseStationAI.js starting to load...');
+
 import { CONFIG } from '../config/config.js';
-import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
+import * as THREE from 'https://cdn.skypack.dev/three@0.160.0';
+console.log('🔍 DEBUG: BaseStationAI - THREE imported successfully');
 
 export class BaseStationAI {
     constructor() {

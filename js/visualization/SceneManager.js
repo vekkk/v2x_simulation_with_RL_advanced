@@ -1,10 +1,16 @@
-import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+console.log('🔍 DEBUG: SceneManager.js starting to load...');
+
+import * as THREE from 'https://cdn.skypack.dev/three@0.160.0';
+console.log('🔍 DEBUG: SceneManager - THREE imported successfully');
+
+import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+console.log('🔍 DEBUG: SceneManager - OrbitControls imported successfully');
+
 import { CONFIG } from '../config/config.js';
 
 export class SceneManager {
     constructor() {
-        console.log('Initializing SceneManager...');
+        console.log('🔍 DEBUG: SceneManager constructor starting...');
         this.scene = new THREE.Scene();
         this.setupRenderer();
         this.setupCamera();
@@ -12,7 +18,7 @@ export class SceneManager {
         this.setupRoad();
         this.setupBaseStation();
         this.setupMouseControls();
-        console.log('SceneManager initialized');
+        console.log('🔍 DEBUG: SceneManager constructor completed successfully');
     }
 
     setupRenderer() {

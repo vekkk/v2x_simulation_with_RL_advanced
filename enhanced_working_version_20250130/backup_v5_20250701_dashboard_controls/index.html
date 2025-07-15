@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced V2X Network Simulation with RL</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Main Statistics Panel -->
+    <div class="info-panel">
+        <h3>Network Statistics</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <label>Packets Sent:</label>
+                <span id="packets-sent">0</span>
+            </div>
+            <div class="stat-item">
+                <label>Packets Received:</label>
+                <span id="packets-received">0</span>
+            </div>
+            <div class="stat-item">
+                <label>Packets Lost:</label>
+                <span id="packets-lost">0</span>
+            </div>
+            <div class="stat-item">
+                <label>Avg Latency:</label>
+                <span id="avg-latency">0 ms</span>
+            </div>
+            <div class="stat-item">
+                <label>Total Data:</label>
+                <span id="total-data">0 KB</span>
+            </div>
+            <div class="stat-item">
+                <label>Handovers:</label>
+                <span id="handover-count">0</span>
+            </div>
+            <div class="stat-item">
+                <label>FPS:</label>
+                <span id="fps">0</span>
+            </div>
+            <div class="stat-item">
+                <label>AI Epsilon:</label>
+                <span id="ai-epsilon">100%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Type Statistics Panel -->
+    <div class="message-panel">
+        <h3>Message Types</h3>
+        <div class="message-legend" id="message-type-legend">
+            <!-- Legend will be populated by JavaScript -->
+        </div>
+        <div class="message-stats">
+            <div class="message-stat" id="safety-message-stats">
+                <div class="message-color" style="background-color: #ff0000;"></div>
+                <span class="message-label">M1 - Safety:</span>
+                <span class="count">0</span>
+            </div>
+            <div class="message-stat" id="basic-cam-stats">
+                <div class="message-color" style="background-color: #00ff00;"></div>
+                <span class="message-label">M2 - CAM:</span>
+                <span class="count">0</span>
+            </div>
+            <div class="message-stat" id="traffic-message-stats">
+                <div class="message-color" style="background-color: #0000ff;"></div>
+                <span class="message-label">M3 - Traffic:</span>
+                <span class="count">0</span>
+            </div>
+            <div class="message-stat" id="infotainment-stats">
+                <div class="message-color" style="background-color: #ffff00;"></div>
+                <span class="message-label">M4 - Info:</span>
+                <span class="count">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RL Learning Panel -->
+    <div class="rl-panel">
+        <h3>Reinforcement Learning</h3>
+        <div class="rl-stats">
+            <div class="rl-stat">
+                <label>Total Reward:</label>
+                <span id="total-reward">0.00</span>
+            </div>
+            <div class="rl-stat">
+                <label>Average Reward:</label>
+                <span id="average-reward">0.000</span>
+            </div>
+            <div class="rl-stat">
+                <label>Episodes:</label>
+                <span id="episode-count">0</span>
+            </div>
+            <div class="rl-stat">
+                <label>Exploration Rate:</label>
+                <span id="exploration-rate">100%</span>
+            </div>
+        </div>
+        <div class="progress-container">
+            <label>Learning Progress:</label>
+            <div class="progress-bar">
+                <div class="progress-fill" id="learning-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Type Statistics Panel -->
+    <div class="network-panel">
+        <h3>Network Performance</h3>
+        <div class="network-stats">
+            <div class="network-stat" id="dsrc-stats">
+                <h4 style="color: #ff6b6b;">DSRC</h4>
+                <div>Sent: <span class="sent">0</span></div>
+                <div>Received: <span class="received">0</span></div>
+                <div>Lost: <span class="lost">0</span></div>
+            </div>
+            <div class="network-stat" id="wifi-stats">
+                <h4 style="color: #4ecdc4;">WiFi</h4>
+                <div>Sent: <span class="sent">0</span></div>
+                <div>Received: <span class="received">0</span></div>
+                <div>Lost: <span class="lost">0</span></div>
+            </div>
+            <div class="network-stat" id="lte-stats">
+                <h4 style="color: #45b7d1;">LTE</h4>
+                <div>Sent: <span class="sent">0</span></div>
+                <div>Received: <span class="received">0</span></div>
+                <div>Lost: <span class="lost">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Summary Panel -->
+    <div class="vehicle-summary-panel">
+        <h3>Vehicle Summary</h3>
+        <div class="summary-stats">
+            <div class="summary-item">
+                <label>Total Vehicles:</label>
+                <span id="total-vehicles">0</span>
+            </div>
+            <div class="summary-item">
+                <label>Cars:</label>
+                <span id="car-count">0</span>
+            </div>
+            <div class="summary-item">
+                <label>Trucks:</label>
+                <span id="truck-count">0</span>
+            </div>
+            <div class="summary-item">
+                <label>Buses:</label>
+                <span id="bus-count">0</span>
+            </div>
+        </div>
+        <div class="network-distribution">
+            <h4>Network Distribution</h4>
+            <div class="network-dist-stats">
+                <div>DSRC: <span id="dsrc-vehicles">0</span></div>
+                <div>WiFi: <span id="wifi-vehicles">0</span></div>
+                <div>LTE: <span id="lte-vehicles">0</span></div>
+                <div>None: <span id="none-vehicles">0</span></div>
+            </div>
+        </div>
+        <div class="message-distribution">
+            <h4>Message Distribution</h4>
+            <div class="message-dist-stats">
+                <div>Safety: <span id="safety-message-vehicles">0</span></div>
+                <div>CAM: <span id="basic-cam-message-vehicles">0</span></div>
+                <div>Traffic: <span id="traffic-message-vehicles">0</span></div>
+                <div>Info: <span id="infotainment-message-vehicles">0</span></div>
+            </div>
+        </div>
+        <div class="rl-summary">
+            <h4>RL Performance</h4>
+            <div class="rl-summary-stats">
+                <div>Avg Reward: <span id="vehicle-average-reward">0.000</span></div>
+                <div>Message Changes: <span id="total-message-changes">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Status Panel -->
+    <div class="vehicle-status-panel">
+        <h3>Live Vehicle Status</h3>
+        <div id="vehicle-status-container" class="vehicle-status-container">
+            <!-- Vehicle status items will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+        <button id="start-btn" class="button">Start Simulation</button>
+        <button id="stop-btn" class="button" disabled>Stop Simulation</button>
+    </div>
+
+    <!-- Three.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Main application -->
+    <script type="module">
+        import { SimulationManager } from './js/SimulationManager.js';
+        
+        // Initialize simulation when the window loads
+        window.addEventListener('load', () => {
+            console.log('Window loaded, initializing simulation...');
+            const simulation = new SimulationManager();
+        });
+    </script>
+</body>
+</html> 

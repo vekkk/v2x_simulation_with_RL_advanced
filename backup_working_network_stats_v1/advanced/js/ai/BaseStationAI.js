@@ -1,5 +1,5 @@
-import { CONFIG } from '../config/config.js';
-import * as THREE from 'three';
+// DISABLED: // DISABLED: import { CONFIG } from '../config/config.js';
+// DISABLED: import * as THREE from 'three';
 
 export class BaseStationAI {
     constructor() {

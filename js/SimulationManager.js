@@ -1,21 +1,37 @@
-import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
+console.log('🔍 DEBUG: SimulationManager.js starting to load...');
+
+import * as THREE from 'https://cdn.skypack.dev/three@0.160.0';
+console.log('🔍 DEBUG: THREE imported successfully from skypack');
+
 import { CONFIG } from './config/config.js';
-//import { SceneManager } from './visualization/SceneManager.js';
-import { SceneManager } from './visuals/SceneManager.js';
+console.log('🔍 DEBUG: CONFIG imported successfully');
+
+import { SceneManager } from './visualization/SceneManager.js';
+console.log('🔍 DEBUG: SceneManager imported successfully');
+
 import { VehicleManager } from './vehicles/VehicleManager.js';
-import { NetworkManager } from './network/NetworkManager.js';
+console.log('🔍 DEBUG: VehicleManager imported successfully');
+
+import { EnhancedVisualNetworkManager } from './network/EnhancedVisualNetworkManager.js';
+console.log('🔍 DEBUG: EnhancedVisualNetworkManager imported successfully');
+
 import { UIManager } from './ui/UIManager.js';
+console.log('🔍 DEBUG: UIManager imported successfully');
 
 export class SimulationManager {
     constructor() {
-        console.log('SimulationManager: Initializing...');
+        console.log('🔍 DEBUG: SimulationManager constructor starting...');
+        console.log('SimulationManager: Initializing enhanced visual simulation...');
         this.isRunning = false;
         this.clock = new THREE.Clock();
         
         // Create managers first
+        console.log('🔍 DEBUG: Creating SceneManager...');
         this.sceneManager = new SceneManager();
+        console.log('🔍 DEBUG: Creating VehicleManager...');
         this.vehicleManager = new VehicleManager(this.sceneManager.scene);
-        this.networkManager = new NetworkManager(this.sceneManager.scene, this.vehicleManager);
+        console.log('🔍 DEBUG: Creating EnhancedVisualNetworkManager...');
+        this.networkManager = new EnhancedVisualNetworkManager(this.sceneManager.scene, this.vehicleManager);
         
         // Connect managers
         this.vehicleManager.setNetworkManager(this.networkManager);
@@ -25,13 +41,18 @@ export class SimulationManager {
         this.stopCallback = this.stop.bind(this);
         
         // Create UI manager with bound callbacks
-        this.uiManager = new UIManager(this.startCallback, this.stopCallback);
+        console.log('🔍 DEBUG: Creating UIManager...');
+        this.uiManager = new UIManager();
+        this.uiManager.setStartCallback(this.startCallback);
+        this.uiManager.setStopCallback(this.stopCallback);
 
         // Setup event listeners
         this.setupEventListeners();
         
         // Setup UI callbacks
         this.setupUICallbacks();
+        
+        console.log('🚀 Enhanced visual simulation initialized with slow motion and message routing');
     }
 
     setupEventListeners() {
@@ -134,7 +155,10 @@ export class SimulationManager {
             networkStats: networkStats.networkStats,
             averageLatency: networkStats.averageLatency,
             totalDataKB: networkStats.totalDataKB,
-            handoverCount: networkStats.handoverCount
+            handoverCount: networkStats.handoverCount,
+            safetyMessages: networkStats.safetyMessages,
+            cloudDecisions: networkStats.cloudDecisions,
+            emergencyProtocols: networkStats.emergencyProtocols
         };
         
         console.log('Updating UI Stats:', stats);
