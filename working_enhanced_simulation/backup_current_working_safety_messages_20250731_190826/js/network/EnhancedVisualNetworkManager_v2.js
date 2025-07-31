@@ -481,13 +481,6 @@ export class EnhancedVisualNetworkManager {
     selectBestNetwork(vehicle) {
         console.log(`🔍 Selecting network for Vehicle ${vehicle.userData.id}...`);
         
-        // Debug: Check if the correct method exists
-        if (!this.ai.getAvailableActions) {
-            console.error('❌ ERROR: getAvailableActions method not found in BaseStationAI!');
-            console.error('❌ Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(this.ai)));
-            return 'None';
-        }
-        
         const availableNetworks = this.ai.getAvailableActions(vehicle);
         console.log(`📡 Available networks for Vehicle ${vehicle.userData.id}:`, availableNetworks);
         

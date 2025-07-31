@@ -3,7 +3,6 @@
  * Connects CloudAssessmentAI and MessageRouterAI to the main system
  */
 
-import { CONFIG } from '../config/config.js';
 import { CloudAssessmentAI } from './CloudAssessmentAI.js';
 import { MessageRouterAI } from './MessageRouterAI.js';
 
@@ -69,18 +68,17 @@ export class AIIntegration {
         const vehicleManager = this.integrationTargets.vehicleManager;
         
         // Update network assessments
-        // Temporarily commented out to fix CONFIG import issue
-        // Object.keys(CONFIG.NETWORK.TYPES).forEach(networkType => {
-        //     const networkStats = networkManager.stats.networkStats[networkType];
-        //     if (networkStats) {
-        //         this.cloudAssessment.updateNetworkAssessment(networkType, {
-        //             totalPackets: networkStats.sent + networkStats.received + networkStats.lost,
-        //             successfulPackets: networkStats.received,
-        //             failedPackets: networkStats.lost,
-        //             averageLatency: networkManager.stats.totalLatency / (networkManager.stats.packetsReceived || 1)
-        //         });
-        //     }
-        // });
+        Object.keys(CONFIG.NETWORK.TYPES).forEach(networkType => {
+            const networkStats = networkManager.stats.networkStats[networkType];
+            if (networkStats) {
+                this.cloudAssessment.updateNetworkAssessment(networkType, {
+                    totalPackets: networkStats.sent + networkStats.received + networkStats.lost,
+                    successfulPackets: networkStats.received,
+                    failedPackets: networkStats.lost,
+                    averageLatency: networkManager.stats.totalLatency / (networkManager.stats.packetsReceived || 1)
+                });
+            }
+        });
         
         // Update vehicle assessments
         if (vehicleManager.vehicles) {
