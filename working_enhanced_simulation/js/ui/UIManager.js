@@ -250,50 +250,72 @@ export class UIManager {
             }
             if (this.processingStatsElements.baseEfficiencyIndicator) {
                 const efficiency = stats.processingStats.baseStation.efficiency || 100;
+                this.processingStatsElements.baseEfficiencyIndicator.style.width = `${efficiency}%`;
+                
+                // Update efficiency indicator color
                 if (efficiency > 80) {
-                    this.processingStatsElements.baseEfficiencyIndicator.className = 'efficiency-indicator';
+                    this.processingStatsElements.baseEfficiencyIndicator.style.backgroundColor = '#4CAF50';
                 } else if (efficiency > 60) {
-                    this.processingStatsElements.baseEfficiencyIndicator.className = 'efficiency-indicator warning';
+                    this.processingStatsElements.baseEfficiencyIndicator.style.backgroundColor = '#FF9800';
                 } else {
-                    this.processingStatsElements.baseEfficiencyIndicator.className = 'efficiency-indicator critical';
+                    this.processingStatsElements.baseEfficiencyIndicator.style.backgroundColor = '#f44336';
                 }
             }
+            
+            // RSU statistics
             if (this.processingStatsElements.totalRSUs) {
-                this.processingStatsElements.totalRSUs.textContent = stats.processingStats.rsus.length || 0;
+                this.processingStatsElements.totalRSUs.textContent = stats.processingStats.rsuCount || 0;
             }
             if (this.processingStatsElements.rsuTasks) {
-                const totalRSUTasks = stats.processingStats.rsus.reduce((sum, rsu) => sum + (rsu.tasksProcessed || 0), 0);
-                this.processingStatsElements.rsuTasks.textContent = totalRSUTasks;
+                this.processingStatsElements.rsuTasks.textContent = stats.processingStats.rsuTotalTasks || 0;
             }
             if (this.processingStatsElements.rsuAvgLoad) {
-                const avgLoad = stats.processingStats.averageLoad || 0;
+                const avgLoad = stats.processingStats.rsuAverageLoad || 0;
                 this.processingStatsElements.rsuAvgLoad.textContent = `${avgLoad.toFixed(1)}%`;
             }
             if (this.processingStatsElements.rsuEfficiency) {
-                const avgEfficiency = stats.processingStats.rsus.reduce((sum, rsu) => sum + (rsu.efficiency || 100), 0) / (stats.processingStats.rsus.length || 1);
-                this.processingStatsElements.rsuEfficiency.textContent = `${avgEfficiency.toFixed(1)}%`;
+                const efficiency = stats.processingStats.rsuEfficiency || 100;
+                this.processingStatsElements.rsuEfficiency.textContent = `${efficiency.toFixed(1)}%`;
             }
             if (this.processingStatsElements.rsuEfficiencyIndicator) {
-                const avgEfficiency = stats.processingStats.rsus.reduce((sum, rsu) => sum + (rsu.efficiency || 100), 0) / (stats.processingStats.rsus.length || 1);
-                if (avgEfficiency > 80) {
-                    this.processingStatsElements.rsuEfficiencyIndicator.className = 'efficiency-indicator';
-                } else if (avgEfficiency > 60) {
-                    this.processingStatsElements.rsuEfficiencyIndicator.className = 'efficiency-indicator warning';
+                const efficiency = stats.processingStats.rsuEfficiency || 100;
+                this.processingStatsElements.rsuEfficiencyIndicator.style.width = `${efficiency}%`;
+                
+                // Update efficiency indicator color
+                if (efficiency > 80) {
+                    this.processingStatsElements.rsuEfficiencyIndicator.style.backgroundColor = '#4CAF50';
+                } else if (efficiency > 60) {
+                    this.processingStatsElements.rsuEfficiencyIndicator.style.backgroundColor = '#FF9800';
                 } else {
-                    this.processingStatsElements.rsuEfficiencyIndicator.className = 'efficiency-indicator critical';
+                    this.processingStatsElements.rsuEfficiencyIndicator.style.backgroundColor = '#f44336';
                 }
             }
+            
+            // Task distribution
             if (this.processingStatsElements.baseTaskPercentage) {
-                const distribution = stats.processingStats.processingDistribution || { baseStation: 0, rsus: 0 };
-                this.processingStatsElements.baseTaskPercentage.textContent = `${distribution.baseStation.toFixed(1)}%`;
+                const baseTasks = stats.processingStats.baseStation.tasksProcessed || 0;
+                const rsuTasks = stats.processingStats.rsuTotalTasks || 0;
+                const totalTasks = baseTasks + rsuTasks;
+                const basePercentage = totalTasks > 0 ? (baseTasks / totalTasks) * 100 : 0;
+                this.processingStatsElements.baseTaskPercentage.textContent = `${basePercentage.toFixed(1)}%`;
             }
             if (this.processingStatsElements.rsuTaskPercentage) {
-                const distribution = stats.processingStats.processingDistribution || { baseStation: 0, rsus: 0 };
-                this.processingStatsElements.rsuTaskPercentage.textContent = `${distribution.rsus.toFixed(1)}%`;
+                const baseTasks = stats.processingStats.baseStation.tasksProcessed || 0;
+                const rsuTasks = stats.processingStats.rsuTotalTasks || 0;
+                const totalTasks = baseTasks + rsuTasks;
+                const rsuPercentage = totalTasks > 0 ? (rsuTasks / totalTasks) * 100 : 0;
+                this.processingStatsElements.rsuTaskPercentage.textContent = `${rsuPercentage.toFixed(1)}%`;
             }
             if (this.processingStatsElements.totalTasks) {
-                this.processingStatsElements.totalTasks.textContent = stats.processingStats.totalTasksProcessed || 0;
+                const baseTasks = stats.processingStats.baseStation.tasksProcessed || 0;
+                const rsuTasks = stats.processingStats.rsuTotalTasks || 0;
+                this.processingStatsElements.totalTasks.textContent = baseTasks + rsuTasks;
             }
+        }
+        
+        // Update latency graph if latency data is available
+        if (stats.latencyData && stats.latencyData.length > 0) {
+            this.updateLatencyGraph(stats.latencyData);
         }
 
         // Update additional metrics
@@ -576,5 +598,122 @@ export class UIManager {
         if (element) {
             element.textContent = value;
         }
+    }
+    
+    updateLatencyGraph(latencyData) {
+        if (!latencyData || latencyData.length === 0) return;
+        
+        const canvas = document.getElementById('latency-graph');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Set background
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Calculate scales
+        const maxLatency = Math.max(...latencyData.map(d => d.latency));
+        const maxVehicles = Math.max(...latencyData.map(d => d.vehicleCount));
+        const minLatency = Math.min(...latencyData.map(d => d.latency));
+        const minVehicles = Math.min(...latencyData.map(d => d.vehicleCount));
+        
+        const latencyScale = height / (maxLatency - minLatency + 1);
+        const vehicleScale = width / (maxVehicles - minVehicles + 1);
+        
+        // Draw grid
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        
+        // Vertical grid lines (vehicle count)
+        for (let i = 0; i <= 5; i++) {
+            const x = (width / 5) * i;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+        
+        // Horizontal grid lines (latency)
+        for (let i = 0; i <= 4; i++) {
+            const y = (height / 4) * i;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+        
+        // Draw latency line
+        if (latencyData.length > 1) {
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            latencyData.forEach((point, index) => {
+                const x = ((point.vehicleCount - minVehicles) * vehicleScale);
+                const y = height - ((point.latency - minLatency) * latencyScale);
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+        }
+        
+        // Draw data points
+        ctx.fillStyle = '#ff6b6b';
+        latencyData.forEach(point => {
+            const x = ((point.vehicleCount - minVehicles) * vehicleScale);
+            const y = height - ((point.latency - minLatency) * latencyScale);
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+        
+        // Draw axis labels
+        ctx.fillStyle = '#ccc';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        
+        // X-axis labels (vehicle count)
+        for (let i = 0; i <= 5; i++) {
+            const x = (width / 5) * i;
+            const vehicleCount = Math.round(minVehicles + (i / 5) * (maxVehicles - minVehicles));
+            ctx.fillText(vehicleCount.toString(), x, height - 5);
+        }
+        
+        // Y-axis labels (latency)
+        ctx.textAlign = 'right';
+        for (let i = 0; i <= 4; i++) {
+            const y = (height / 4) * i;
+            const latency = Math.round(maxLatency - (i / 4) * (maxLatency - minLatency));
+            ctx.fillText(latency.toString(), 25, y + 3);
+        }
+        
+        // Update latency statistics
+        this.updateLatencyStats(latencyData);
+    }
+    
+    updateLatencyStats(latencyData) {
+        if (!latencyData || latencyData.length === 0) return;
+        
+        const currentLatency = latencyData[latencyData.length - 1].latency;
+        const avgLatency = latencyData.reduce((sum, d) => sum + d.latency, 0) / latencyData.length;
+        const maxLatency = Math.max(...latencyData.map(d => d.latency));
+        const minLatency = Math.min(...latencyData.map(d => d.latency));
+        
+        this.updateElement('current-latency', `${currentLatency.toFixed(1)} ms`);
+        this.updateElement('average-latency-value', `${avgLatency.toFixed(1)} ms`);
+        this.updateElement('max-latency', `${maxLatency.toFixed(1)} ms`);
+        this.updateElement('min-latency', `${minLatency.toFixed(1)} ms`);
     }
 } 

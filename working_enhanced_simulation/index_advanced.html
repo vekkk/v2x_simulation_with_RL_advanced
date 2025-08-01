@@ -802,6 +802,54 @@
             font-size: 14px;
             color: white;
         }
+
+        /* Latency Data Graph Styles */
+        .latency-graph-container {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            margin-bottom: 15px;
+            background: #222;
+            border-radius: 8px;
+            border: 1px solid #444;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .latency-graph {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+            background: #111;
+        }
+
+        .graph-legend {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            padding: 5px 0;
+            border-top: 1px solid #444;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+
+        .latency-stats {
+            text-align: center;
+            font-size: 12px;
+            color: #ccc;
+        }
     </style>
 </head>
 <body>
@@ -965,6 +1013,35 @@
                 <div>Sent: <span class="sent">0</span></div>
                 <div>Received: <span class="received">0</span></div>
                 <div>Lost: <span class="lost">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Latency Data Graph Panel -->
+    <div class="latency-graph-panel simulation-dashboard" id="latency-graph-dashboard">
+        <div class="dashboard-header">
+            <h3>Latency vs Vehicle Count</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('latency-graph-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="latency-graph-container">
+                <canvas id="latency-graph" width="300" height="200"></canvas>
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #ff6b6b;"></div>
+                        <span>Latency (ms)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #4ecdc4;"></div>
+                        <span>Vehicle Count</span>
+                    </div>
+                </div>
+            </div>
+            <div class="latency-stats">
+                <div>Current Latency: <span id="current-latency">0 ms</span></div>
+                <div>Average Latency: <span id="average-latency-value">0 ms</span></div>
+                <div>Max Latency: <span id="max-latency">0 ms</span></div>
+                <div>Min Latency: <span id="min-latency">0 ms</span></div>
             </div>
         </div>
     </div>
