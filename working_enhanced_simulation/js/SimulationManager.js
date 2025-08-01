@@ -40,6 +40,10 @@ export class SimulationManager {
         // New AI Integration for advanced features
         this.aiIntegration = new AIIntegration();
         
+        // Initialize safety messages array
+        this.safetyMessages = [];
+        this.latencyData = [];
+        
         // Simulation state
         this.isRunning = false;
         this.isPaused = false;
@@ -99,11 +103,18 @@ export class SimulationManager {
             // Initialize vehicles now that scene is available
             if (this.vehicleManager.initializeVehicles) {
                 this.vehicleManager.initializeVehicles();
+                console.log('🚗 Vehicles initialized');
             }
             
             // Set up VehicleManager references
             this.vehicleManager.setNetworkManager(this.networkManager);
             this.vehicleManager.setProcessingManager(this.processingManager);
+            
+            // Log vehicle count for debugging
+            setTimeout(() => {
+                console.log('🔍 Vehicle count after initialization:', this.vehicleManager.vehicles ? this.vehicleManager.vehicles.length : 'undefined');
+                console.log('🔍 Vehicle manager:', this.vehicleManager);
+            }, 1000);
             
             // Initialize AI manager with simulation components
             this.aiManager.initialize(this.sceneManager, this.networkManager, this.vehicleManager);
@@ -437,35 +448,46 @@ export class SimulationManager {
         };
         
         // Count safety messages and generate realistic data
-        if (this.safetyMessages) {
+        if (this.safetyMessages && this.safetyMessages.length > 0) {
             stats.safetyMessages = this.safetyMessages.length;
-            stats.totalSent = this.safetyMessages.length;
             stats.messageTypeStats.SAFETY_MESSAGE = this.safetyMessages.length;
             
-            // Generate other message types based on safety messages
+            console.log(`🔍 Safety Messages Count: ${this.safetyMessages.length}`);
+            
+            // Generate other message types based on safety messages (more realistic ratios)
             const baseCount = Math.max(1, this.safetyMessages.length);
-            stats.messageTypeStats.BASIC_CAM_MESSAGE = Math.floor(baseCount * 3); // CAM messages are more frequent
-            stats.messageTypeStats.TRAFFIC_MESSAGE = Math.floor(baseCount * 1.5);
-            stats.messageTypeStats.INFOTAINMENT_MESSAGE = Math.floor(baseCount * 2);
+            stats.messageTypeStats.BASIC_CAM_MESSAGE = Math.floor(baseCount * 8); // CAM messages are much more frequent
+            stats.messageTypeStats.TRAFFIC_MESSAGE = Math.floor(baseCount * 3); // Traffic info
+            stats.messageTypeStats.INFOTAINMENT_MESSAGE = Math.floor(baseCount * 5); // Infotainment
+            
+            console.log(`🔍 Message Type Stats:`, stats.messageTypeStats);
             
             // Calculate total sent from all message types
             stats.totalSent = Object.values(stats.messageTypeStats).reduce((sum, count) => sum + count, 0);
             
-            // Simulate received messages with realistic success rates
-            const successRate = 0.85 + (Math.random() * 0.1); // 85-95% success rate
-            stats.totalReceived = Math.floor(stats.totalSent * successRate);
-            stats.totalLost = stats.totalSent - stats.totalReceived;
+            console.log(`🔍 Total Sent (before network distribution): ${stats.totalSent}`);
             
             // Simulate network distribution with realistic patterns
             const totalMessages = stats.totalSent;
-            stats.networkStats.DSRC.sent = Math.floor(totalMessages * 0.45); // DSRC for safety-critical
-            stats.networkStats.WIFI.sent = Math.floor(totalMessages * 0.35); // WiFi for general
-            stats.networkStats.LTE.sent = Math.floor(totalMessages * 0.20); // LTE for backup
+            
+            // More realistic network distribution based on message types
+            // DSRC: High priority, safety-critical messages (40% of total)
+            // WiFi: General purpose, moderate priority (45% of total) 
+            // LTE: Backup, low priority (15% of total)
+            const dsrcCount = Math.floor(totalMessages * 0.40);
+            const wifiCount = Math.floor(totalMessages * 0.45);
+            const lteCount = totalMessages - dsrcCount - wifiCount; // Ensure total adds up exactly
+            
+            stats.networkStats.DSRC.sent = dsrcCount;
+            stats.networkStats.WIFI.sent = wifiCount;
+            stats.networkStats.LTE.sent = lteCount;
+            
+            console.log(`🔍 Network Distribution: DSRC=${dsrcCount}, WiFi=${wifiCount}, LTE=${lteCount}`);
             
             // Calculate received and lost for each network with different success rates
-            const dsrcSuccessRate = 0.92; // DSRC has high reliability
+            const dsrcSuccessRate = 0.95; // DSRC has very high reliability for safety
             const wifiSuccessRate = 0.88; // WiFi moderate reliability
-            const lteSuccessRate = 0.85; // LTE lower reliability
+            const lteSuccessRate = 0.82; // LTE lower reliability but good coverage
             
             stats.networkStats.DSRC.received = Math.floor(stats.networkStats.DSRC.sent * dsrcSuccessRate);
             stats.networkStats.DSRC.lost = stats.networkStats.DSRC.sent - stats.networkStats.DSRC.received;
@@ -475,6 +497,27 @@ export class SimulationManager {
             
             stats.networkStats.LTE.received = Math.floor(stats.networkStats.LTE.sent * lteSuccessRate);
             stats.networkStats.LTE.lost = stats.networkStats.LTE.sent - stats.networkStats.LTE.received;
+            
+            // Calculate totals from network stats (this is the source of truth)
+            stats.totalSent = stats.networkStats.DSRC.sent + stats.networkStats.WIFI.sent + stats.networkStats.LTE.sent;
+            stats.totalReceived = stats.networkStats.DSRC.received + stats.networkStats.WIFI.received + stats.networkStats.LTE.received;
+            stats.totalLost = stats.networkStats.DSRC.lost + stats.networkStats.WIFI.lost + stats.networkStats.LTE.lost;
+            
+            console.log(`📊 Network Stats: Total=${stats.totalSent}, DSRC=${stats.networkStats.DSRC.sent}, WiFi=${stats.networkStats.WIFI.sent}, LTE=${stats.networkStats.LTE.sent}`);
+            console.log(`📊 Network Received: Total=${stats.totalReceived}, DSRC=${stats.networkStats.DSRC.received}, WiFi=${stats.networkStats.WIFI.received}, LTE=${stats.networkStats.LTE.received}`);
+            console.log(`📊 Network Lost: Total=${stats.totalLost}, DSRC=${stats.networkStats.DSRC.lost}, WiFi=${stats.networkStats.WIFI.lost}, LTE=${stats.networkStats.LTE.lost}`);
+        } else {
+            console.log(`🔍 No safety messages found or array is empty`);
+            console.log(`🔍 Safety messages array:`, this.safetyMessages);
+            // Set default values when no safety messages exist
+            stats.safetyMessages = 0;
+            stats.messageTypeStats.SAFETY_MESSAGE = 0;
+            stats.messageTypeStats.BASIC_CAM_MESSAGE = 0;
+            stats.messageTypeStats.TRAFFIC_MESSAGE = 0;
+            stats.messageTypeStats.INFOTAINMENT_MESSAGE = 0;
+            stats.totalSent = 0;
+            stats.totalReceived = 0;
+            stats.totalLost = 0;
         }
         
         // Calculate total data transferred (realistic message sizes)
@@ -491,7 +534,7 @@ export class SimulationManager {
         
         // Calculate average latency
         if (stats.totalReceived > 0) {
-            stats.totalLatency = stats.totalReceived * 45; // 45ms average latency
+            stats.totalLatency = stats.totalReceived * 30; // Reduced from 45ms to 30ms average latency
         }
         
         // Generate realistic RL stats
@@ -530,35 +573,56 @@ export class SimulationManager {
         // Add new latency data point
         const vehicleCount = this.vehicleManager.vehicles ? this.vehicleManager.vehicles.length : 0;
         
-        // Generate realistic latency data even if no messages are processed yet
+        // Calculate realistic latency based on actual simulation conditions
         let avgLatency;
         if (messageCount > 0) {
+            // Use actual measured latency from processed messages
             avgLatency = totalLatency / messageCount;
         } else {
-            // Generate realistic latency based on vehicle count and simulation time
-            const baseLatency = 30; // Base latency in ms
-            const vehicleLoadFactor = vehicleCount * 2; // More vehicles = higher latency
-            const timeFactor = (Date.now() % 10000) / 1000; // Varying factor over time
-            avgLatency = baseLatency + vehicleLoadFactor + (Math.sin(timeFactor) * 10);
+            // Generate realistic latency based on actual simulation factors
+            const baseLatency = 15; // Reduced base latency from 25ms to 15ms
+            
+            // Factor 1: Vehicle density impact (more vehicles = higher latency)
+            const vehicleDensityFactor = Math.min(vehicleCount * 0.8, 15); // Reduced from 1.5 to 0.8, cap from 30 to 15
+            
+            // Factor 2: Network load based on total messages sent
+            const networkLoadFactor = Math.min(stats.totalSent * 0.2, 10); // Reduced from 0.5 to 0.2, cap from 20 to 10
+            
+            // Factor 3: Distance factor (vehicles farther from infrastructure have higher latency)
+            let distanceFactor = 0;
+            if (this.vehicleManager.vehicles && this.vehicleManager.vehicles.length > 0) {
+                const avgDistance = this.vehicleManager.vehicles.reduce((sum, vehicle) => {
+                    const baseStationPos = this.sceneManager.baseStationPosition || new THREE.Vector3(0, 0.1, 50);
+                    return sum + vehicle.position.distanceTo(baseStationPos);
+                }, 0) / this.vehicleManager.vehicles.length;
+                distanceFactor = Math.min(avgDistance * 0.05, 8); // Reduced from 0.1 to 0.05, cap from 15 to 8
+            }
+            
+            // Factor 4: Small random variation for realism
+            const randomVariation = (Math.random() - 0.5) * 6; // Reduced from 10 to 6 (±3ms variation)
+            
+            avgLatency = baseLatency + vehicleDensityFactor + networkLoadFactor + distanceFactor + randomVariation;
+            avgLatency = Math.max(10, Math.min(avgLatency, 50)); // Keep between 10-50ms instead of 20-100ms
         }
         
-        // Only add data point if we have meaningful data or every 2 seconds
+        // Only add data point if we have meaningful data or every 3 seconds
         const shouldAddDataPoint = this.latencyData.length === 0 || 
-                                 (Date.now() - (this.latencyData[this.latencyData.length - 1]?.timestamp || 0)) > 2000;
+                                 (Date.now() - (this.latencyData[this.latencyData.length - 1]?.timestamp || 0)) > 3000;
         
         if (shouldAddDataPoint) {
             this.latencyData.push({
                 vehicleCount: vehicleCount,
                 latency: Math.round(avgLatency),
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                isRealData: messageCount > 0 // Flag to indicate if this is real or simulated data
             });
             
-            console.log(`📊 Latency Data Point: ${vehicleCount} vehicles, ${Math.round(avgLatency)}ms latency`);
+            console.log(`📊 Latency Data Point: ${vehicleCount} vehicles, ${Math.round(avgLatency)}ms latency (${messageCount > 0 ? 'REAL' : 'SIMULATED'})`);
         }
         
-        // Keep only last 50 data points to prevent memory issues and ensure graph readability
-        if (this.latencyData.length > 50) {
-            this.latencyData = this.latencyData.slice(-50);
+        // Keep only last 30 data points to prevent memory issues and ensure graph readability
+        if (this.latencyData.length > 30) {
+            this.latencyData = this.latencyData.slice(-30);
         }
         
         // Update stats with latency data
@@ -807,13 +871,20 @@ export class SimulationManager {
         
         // Wait for vehicles to be created
         setTimeout(() => {
-            if (this.vehicleManager.vehicles.length > 0) {
+            console.log('🔍 Checking for vehicles...');
+            console.log('🔍 Vehicle manager:', this.vehicleManager);
+            console.log('🔍 Vehicles array:', this.vehicleManager.vehicles);
+            console.log('🔍 Vehicle count:', this.vehicleManager.vehicles ? this.vehicleManager.vehicles.length : 'undefined');
+            
+            if (this.vehicleManager.vehicles && this.vehicleManager.vehicles.length > 0) {
+                console.log('✅ Vehicles found, creating safety messages...');
+                
                 // Create initial safety message
                 this.createSafetyMessageForVehicle(this.vehicleManager.vehicles[0]);
                 
                 // Create additional safety messages every 6 seconds (more frequent for better visibility)
                 setInterval(() => {
-                    if (this.vehicleManager.vehicles.length > 0) {
+                    if (this.vehicleManager.vehicles && this.vehicleManager.vehicles.length > 0) {
                         // Pick a random vehicle
                         const randomIndex = Math.floor(Math.random() * this.vehicleManager.vehicles.length);
                         const randomVehicle = this.vehicleManager.vehicles[randomIndex];
@@ -824,12 +895,29 @@ export class SimulationManager {
                         }
                     }
                 }, 6000); // Every 6 seconds
+                
+                // Also create a safety message every 2 seconds for testing
+                setInterval(() => {
+                    if (this.vehicleManager.vehicles && this.vehicleManager.vehicles.length > 0) {
+                        const testVehicle = this.vehicleManager.vehicles[0];
+                        this.createSafetyMessageForVehicle(testVehicle);
+                        console.log(`🧪 TEST: Created safety message for testing. Total count: ${this.safetyMessages ? this.safetyMessages.length : 0}`);
+                    }
+                }, 2000); // Every 2 seconds for testing
+            } else {
+                console.log('❌ No vehicles found, cannot create safety messages');
             }
         }, 3000); // Wait 3 seconds for vehicles to be created
     }
     
     createSafetyMessageForVehicle(vehicle) {
         console.log(`🚨 Creating safety message for Vehicle ${vehicle.userData.id}`);
+        
+        // Ensure safety messages array exists
+        if (!this.safetyMessages) {
+            this.safetyMessages = [];
+            console.log('🔧 Initialized safety messages array');
+        }
         
         // Create a large red sphere above the vehicle
         const safetyMessageGeometry = new THREE.SphereGeometry(1.5, 16, 16);
@@ -847,11 +935,6 @@ export class SimulationManager {
         // Add to scene
         this.scene.add(safetyMessage);
         
-        // Store reference for animation with movement data
-        if (!this.safetyMessages) {
-            this.safetyMessages = [];
-        }
-        
         // Determine target destination (RSU or base station)
         const targetPosition = this.getNearestInfrastructure(vehicle.position);
         
@@ -864,9 +947,11 @@ export class SimulationManager {
             duration: 4000, // 4 seconds to reach destination
             id: `safety_${vehicle.userData.id}_${Date.now()}`,
             targetType: this.getTargetType(targetPosition),
-            creationTime: Date.now() // Track when message was created
+            creationTime: Date.now(), // Track when message was created
+            processed: false // Initialize as not processed
         };
         
+        // Add to safety messages array
         this.safetyMessages.push(messageData);
         
         console.log(`🚨🚨🚨 SAFETY MESSAGE CREATED for Vehicle ${vehicle.userData.id} 🚨🚨🚨`);
@@ -874,6 +959,12 @@ export class SimulationManager {
         console.log(`🚨 Target Position:`, targetPosition);
         console.log(`🚨 Target Type:`, messageData.targetType);
         console.log(`🚨 Total safety messages: ${this.safetyMessages.length}`);
+        console.log(`🚨 Safety messages array length: ${this.safetyMessages ? this.safetyMessages.length : 'undefined'}`);
+        
+        // Force UI update immediately
+        setTimeout(() => {
+            this.updateComprehensiveUI();
+        }, 100);
     }
     
     getNearestInfrastructure(vehiclePosition) {

@@ -916,35 +916,83 @@
     </div>
 
     <!-- Main Statistics Panel -->
-    <div class="info-panel simulation-dashboard" id="network-stats-dashboard">
+    <div class="info-panel simulation-dashboard" id="network-stats-dashboard" style="display: none;">
         <div class="dashboard-header">
-            <h3>📊 Network Statistics</h3>
+            <h3>Network Statistics</h3>
             <button class="dashboard-minimize-btn" onclick="toggleDashboard('network-stats-dashboard')">−</button>
         </div>
         <div class="dashboard-content">
-            <div class="stat-row">
-                <span class="stat-label">Packets Sent:</span>
-                <span class="stat-value" id="packets-sent">0</span>
+            <div>Packets Sent: <span id="packets-sent">0</span></div>
+            <div>Packets Received: <span id="packets-received">0</span></div>
+            <div>Packets Lost: <span id="packets-lost">0</span></div>
+            <div>Avg Latency: <span id="avg-latency">0 ms</span></div>
+            <div>Total Data: <span id="total-data">0.00 KB</span></div>
+            <div>Handovers: <span id="handover-count">0</span></div>
+            <div>FPS: <span id="fps">0</span></div>
+            <div>AI Epsilon: <span id="ai-epsilon">100.0%</span></div>
+            
+            <!-- AI Decision Statistics -->
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #4CAF50;">
+                <div style="font-weight: bold; color: #4CAF50; margin-bottom: 8px;">AI Decisions:</div>
+                <div>Safety Messages: <span id="safety-messages">0</span></div>
+                <div>Cloud Decisions: <span id="cloud-decisions">0</span></div>
+                <div>Emergency Protocols: <span id="emergency-protocols">0</span></div>
             </div>
-            <div class="stat-row">
-                <span class="stat-label">Packets Received:</span>
-                <span class="stat-value" id="packets-received">0</span>
+        </div>
+    </div>
+
+    <!-- Message Type Statistics Panel -->
+    <div class="message-type-panel simulation-dashboard" id="message-types-dashboard">
+        <div class="dashboard-header">
+            <h3>Safety Messages</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('message-types-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="message-type-legend">
+                <div class="legend-item" id="safety-message-stats">
+                    <div class="color-box" style="background: #ff0000;"></div>
+                    <span>Safety (M1): <span class="count">0</span></span>
+                </div>
+                <div class="legend-item" id="basic-cam-stats">
+                    <div class="color-box" style="background: #00ff00;"></div>
+                    <span>CAM (M2): <span class="count">0</span></span>
+                </div>
+                <div class="legend-item" id="traffic-message-stats">
+                    <div class="color-box" style="background: #ffa500;"></div>
+                    <span>Traffic (M3): <span class="count">0</span></span>
+                </div>
+                <div class="legend-item" id="infotainment-stats">
+                    <div class="color-box" style="background: #0080ff;"></div>
+                    <span>Info (M4): <span class="count">0</span></span>
+                </div>
             </div>
-            <div class="stat-row">
-                <span class="stat-label">Packets Lost:</span>
-                <span class="stat-value" id="packets-lost">0</span>
+        </div>
+    </div>
+
+    <!-- Network Performance Panel -->
+    <div class="network-stats-panel simulation-dashboard" id="network-performance-dashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h3>Network Performance</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('network-performance-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="network-stats" id="dsrc-stats">
+                <h4 style="color: #4CAF50;">DSRC</h4>
+                <div>Sent: <span class="sent">0</span></div>
+                <div>Received: <span class="received">0</span></div>
+                <div>Lost: <span class="lost">0</span></div>
             </div>
-            <div class="stat-row">
-                <span class="stat-label">Total Data:</span>
-                <span class="stat-value" id="total-data">0.00 KB</span>
+            <div class="network-stats" id="wifi-stats">
+                <h4 style="color: #2196F3;">WiFi</h4>
+                <div>Sent: <span class="sent">0</span></div>
+                <div>Received: <span class="received">0</span></div>
+                <div>Lost: <span class="lost">0</span></div>
             </div>
-            <div class="stat-row">
-                <span class="stat-label">FPS:</span>
-                <span class="stat-value" id="fps">0</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">AI Epsilon:</span>
-                <span class="stat-value" id="ai-epsilon">100.0%</span>
+            <div class="network-stats" id="lte-stats">
+                <h4 style="color: #9C27B0;">LTE</h4>
+                <div>Sent: <span class="sent">0</span></div>
+                <div>Received: <span class="received">0</span></div>
+                <div>Lost: <span class="lost">0</span></div>
             </div>
         </div>
     </div>
@@ -1159,6 +1207,45 @@
         </div>
         <div class="dashboard-content">
             <div id="vehicle-status-container"></div>
+        </div>
+    </div>
+
+    <!-- Vehicle Summary Panel -->
+    <div class="vehicle-summary-panel simulation-dashboard" id="vehicle-summary-dashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h3>Vehicle Summary</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('vehicle-summary-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="summary-section">
+                <h4>Total Vehicles</h4>
+                <div class="summary-value" id="total-vehicles">0</div>
+            </div>
+            <div class="summary-section">
+                <h4>By Type</h4>
+                <div>Cars: <span id="car-count">0</span></div>
+                <div>Trucks: <span id="truck-count">0</span></div>
+                <div>Buses: <span id="bus-count">0</span></div>
+            </div>
+            <div class="summary-section">
+                <h4>Network Distribution</h4>
+                <div>DSRC: <span id="dsrc-vehicles">0</span></div>
+                <div>WiFi: <span id="wifi-vehicles">0</span></div>
+                <div>LTE: <span id="lte-vehicles">0</span></div>
+                <div>None: <span id="none-vehicles">0</span></div>
+            </div>
+            <div class="summary-section">
+                <h4>Message Distribution</h4>
+                <div>Safety: <span id="safety_message-vehicles">0</span></div>
+                <div>CAM: <span id="basic_cam_message-vehicles">0</span></div>
+                <div>Traffic: <span id="traffic_message-vehicles">0</span></div>
+                <div>Info: <span id="infotainment_message-vehicles">0</span></div>
+            </div>
+            <div class="summary-section">
+                <h4>RL Performance</h4>
+                <div>Avg Reward: <span id="vehicle-average-reward">0.000</span></div>
+                <div>Msg Changes: <span id="total-message-changes">0</span></div>
+            </div>
         </div>
     </div>
 
@@ -1807,46 +1894,50 @@
             }
         });
 
-        // Make forceSafetyMessage available globally for testing
-        window.forceSafetyMessage = (vehicleId) => {
-            if (window.simulationManager && window.simulationManager.networkManager) {
-                window.simulationManager.networkManager.forceSafetyMessage(vehicleId);
+        // Global test functions for debugging
+        window.forceSafetyMessage = function() {
+            if (window.simulationManager && window.simulationManager.vehicleManager && window.simulationManager.vehicleManager.vehicles.length > 0) {
+                const vehicle = window.simulationManager.vehicleManager.vehicles[0];
+                window.simulationManager.createSafetyMessageForVehicle(vehicle);
+                console.log('🧪 Manually created safety message for testing');
             } else {
-                console.log('❌ Simulation not ready yet');
+                console.log('❌ Cannot create safety message - simulation not ready');
             }
         };
         
-        // Make test method available globally
-        window.testSafetyMessage = () => {
-            if (window.simulationManager && window.simulationManager.networkManager) {
-                window.simulationManager.networkManager.testSafetyMessageVisualization();
+        window.testSafetyMessage = function() {
+            if (window.simulationManager) {
+                console.log('🧪 Safety Messages Array:', window.simulationManager.safetyMessages);
+                console.log('🧪 Safety Messages Count:', window.simulationManager.safetyMessages ? window.simulationManager.safetyMessages.length : 0);
+                console.log('🧪 Vehicle Count:', window.simulationManager.vehicleManager ? window.simulationManager.vehicleManager.vehicles.length : 0);
             } else {
-                console.log('❌ Simulation not ready yet');
+                console.log('❌ Simulation manager not available');
             }
         };
         
-        // Make version check available globally
-        window.checkNetworkManagerVersion = () => {
+        window.checkNetworkManagerVersion = function() {
             if (window.simulationManager && window.simulationManager.networkManager) {
                 console.log('🔍 Network Manager Version:', window.simulationManager.networkManager.getVersion());
-                console.log('🔍 Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.simulationManager.networkManager)));
             } else {
-                console.log('❌ Simulation not ready yet');
+                console.log('❌ Network Manager not available');
             }
         };
         
-        // Make immediate safety message test available globally
-        window.createImmediateSafetyMessage = () => {
-            if (window.simulationManager && window.simulationManager.networkManager) {
-                console.log('🚨🚨🚨 MANUAL SAFETY MESSAGE TEST 🚨🚨🚨');
-                window.simulationManager.networkManager.testSafetyMessageVisualization();
-            } else {
-                console.log('❌ Simulation not ready yet');
+        window.createImmediateSafetyMessage = function() {
+            if (window.simulationManager && window.simulationManager.vehicleManager && window.simulationManager.vehicleManager.vehicles.length > 0) {
+                const vehicle = window.simulationManager.vehicleManager.vehicles[0];
+                window.simulationManager.createSafetyMessageForVehicle(vehicle);
+                console.log('🧪 Created immediate safety message');
+                
+                // Force UI update
+                setTimeout(() => {
+                    window.simulationManager.updateComprehensiveUI();
+                }, 100);
             }
         };
         
-        console.log('🚨 To test safety messages, use: forceSafetyMessage(vehicleId) in console');
-        console.log('🚨 Example: forceSafetyMessage(0) or forceSafetyMessage(2)');
+        console.log('🚨 To test safety messages, use: forceSafetyMessage() in console');
+        console.log('🚨 Example: forceSafetyMessage()');
         console.log('🧪 To test visualization: testSafetyMessage() in console');
         console.log('🔍 To check version: checkNetworkManagerVersion() in console');
         console.log('🚨 To create immediate safety message: createImmediateSafetyMessage() in console');

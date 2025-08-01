@@ -214,6 +214,42 @@ export class UIManager {
                     }
                 }
             }
+            
+            // Log total network statistics for verification
+            const totalNetworkSent = Object.values(stats.networkStats).reduce((sum, net) => sum + (net.sent || 0), 0);
+            const totalNetworkReceived = Object.values(stats.networkStats).reduce((sum, net) => sum + (net.received || 0), 0);
+            const totalNetworkLost = Object.values(stats.networkStats).reduce((sum, net) => sum + (net.lost || 0), 0);
+            
+            console.log(`📊 Network Totals: Sent=${totalNetworkSent}, Received=${totalNetworkReceived}, Lost=${totalNetworkLost}`);
+            console.log(`📊 Main Stats: totalSent=${stats.totalSent}, totalReceived=${stats.totalReceived}, totalLost=${stats.totalLost}`);
+            
+            // Verify consistency
+            if (totalNetworkSent !== stats.totalSent) {
+                console.warn(`⚠️ Network sent mismatch: ${totalNetworkSent} vs ${stats.totalSent}`);
+            }
+            if (totalNetworkReceived !== stats.totalReceived) {
+                console.warn(`⚠️ Network received mismatch: ${totalNetworkReceived} vs ${stats.totalReceived}`);
+            }
+            if (totalNetworkLost !== stats.totalLost) {
+                console.warn(`⚠️ Network lost mismatch: ${totalNetworkLost} vs ${stats.totalLost}`);
+            }
+        }
+        
+        // Update additional network metrics that might be missing
+        if (this.avgLatencyElement && stats.totalReceived > 0) {
+            const avgLatency = stats.totalLatency / stats.totalReceived;
+            this.avgLatencyElement.textContent = `${avgLatency.toFixed(1)} ms`;
+        }
+        
+        if (this.totalDataElement) {
+            const dataKB = (stats.totalDataTransferred / 1024).toFixed(2);
+            this.totalDataElement.textContent = `${dataKB} KB`;
+        }
+        
+        if (this.handoverCountElement) {
+            // Simulate handover count based on network changes
+            const handoverCount = Math.floor(stats.totalSent / 10); // Every 10 messages might trigger a handover
+            this.handoverCountElement.textContent = handoverCount;
         }
 
         // Update processing statistics
@@ -618,9 +654,9 @@ export class UIManager {
         ctx.fillRect(0, 0, width, height);
         
         // Calculate scales with better handling of edge cases
-        const maxLatency = Math.max(...latencyData.map(d => d.latency), 100); // Minimum 100ms range
+        const maxLatency = Math.max(...latencyData.map(d => d.latency), 50); // Reduced minimum range from 100ms to 50ms
         const maxVehicles = Math.max(...latencyData.map(d => d.vehicleCount), 10); // Minimum 10 vehicles range
-        const minLatency = Math.min(...latencyData.map(d => d.latency), 20); // Minimum 20ms
+        const minLatency = Math.min(...latencyData.map(d => d.latency), 10); // Reduced minimum from 20ms to 10ms
         const minVehicles = Math.min(...latencyData.map(d => d.vehicleCount), 0);
         
         const latencyRange = maxLatency - minLatency;
@@ -642,9 +678,9 @@ export class UIManager {
             ctx.stroke();
         }
         
-        // Horizontal grid lines (latency) - every 20ms
-        for (let i = 0; i <= Math.ceil(maxLatency / 20); i++) {
-            const y = (height / Math.ceil(maxLatency / 20)) * i;
+        // Horizontal grid lines (latency) - every 10ms instead of 20ms for better granularity
+        for (let i = 0; i <= Math.ceil(maxLatency / 10); i++) {
+            const y = (height / Math.ceil(maxLatency / 10)) * i;
             ctx.beginPath();
             ctx.moveTo(0, y);
             ctx.lineTo(width, y);
@@ -682,12 +718,38 @@ export class UIManager {
             const x = ((point.vehicleCount - minVehicles) * vehicleScale);
             const y = height - ((point.latency - minLatency) * latencyScale);
             
+            // Use different colors for real vs simulated data
+            if (point.isRealData) {
+                ctx.fillStyle = '#4CAF50'; // Green for real data
+                ctx.strokeStyle = '#ffffff';
+            } else {
+                ctx.fillStyle = '#ff6b6b'; // Red for simulated data
+                ctx.strokeStyle = '#ffffff';
+            }
+            
             // Draw point with white border
             ctx.beginPath();
             ctx.arc(x, y, 4, 0, 2 * Math.PI);
             ctx.fill();
             ctx.stroke();
         });
+        
+        // Add legend for data types
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'left';
+        
+        // Real data legend
+        ctx.fillStyle = '#4CAF50';
+        ctx.fillRect(10, height - 40, 8, 8);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('Real Data', 25, height - 32);
+        
+        // Simulated data legend
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillRect(10, height - 25, 8, 8);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('Simulated Data', 25, height - 17);
         
         // Draw axis labels with better formatting
         ctx.fillStyle = '#ffffff';
@@ -701,11 +763,11 @@ export class UIManager {
             ctx.fillText(vehicleCount.toString(), x, height - 5);
         }
         
-        // Y-axis labels (latency) - every 20ms
+        // Y-axis labels (latency) - every 10ms instead of 20ms
         ctx.textAlign = 'right';
-        for (let i = 0; i <= Math.ceil(maxLatency / 20); i++) {
-            const y = (height / Math.ceil(maxLatency / 20)) * i;
-            const latency = Math.round(maxLatency - (i / Math.ceil(maxLatency / 20)) * latencyRange);
+        for (let i = 0; i <= Math.ceil(maxLatency / 10); i++) {
+            const y = (height / Math.ceil(maxLatency / 10)) * i;
+            const latency = Math.round(maxLatency - (i / Math.ceil(maxLatency / 10)) * latencyRange);
             ctx.fillText(latency.toString(), 30, y + 4);
         }
         
