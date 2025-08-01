@@ -614,44 +614,49 @@ export class UIManager {
         ctx.clearRect(0, 0, width, height);
         
         // Set background
-        ctx.fillStyle = '#111';
+        ctx.fillStyle = '#1a1a1a';
         ctx.fillRect(0, 0, width, height);
         
-        // Calculate scales
-        const maxLatency = Math.max(...latencyData.map(d => d.latency));
-        const maxVehicles = Math.max(...latencyData.map(d => d.vehicleCount));
-        const minLatency = Math.min(...latencyData.map(d => d.latency));
-        const minVehicles = Math.min(...latencyData.map(d => d.vehicleCount));
+        // Calculate scales with better handling of edge cases
+        const maxLatency = Math.max(...latencyData.map(d => d.latency), 100); // Minimum 100ms range
+        const maxVehicles = Math.max(...latencyData.map(d => d.vehicleCount), 10); // Minimum 10 vehicles range
+        const minLatency = Math.min(...latencyData.map(d => d.latency), 20); // Minimum 20ms
+        const minVehicles = Math.min(...latencyData.map(d => d.vehicleCount), 0);
         
-        const latencyScale = height / (maxLatency - minLatency + 1);
-        const vehicleScale = width / (maxVehicles - minVehicles + 1);
+        const latencyRange = maxLatency - minLatency;
+        const vehicleRange = maxVehicles - minVehicles;
         
-        // Draw grid
+        const latencyScale = height / (latencyRange + 1);
+        const vehicleScale = width / (vehicleRange + 1);
+        
+        // Draw grid with better visibility
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 1;
         
-        // Vertical grid lines (vehicle count)
-        for (let i = 0; i <= 5; i++) {
-            const x = (width / 5) * i;
+        // Vertical grid lines (vehicle count) - every 2 vehicles
+        for (let i = 0; i <= Math.ceil(maxVehicles / 2); i++) {
+            const x = (width / Math.ceil(maxVehicles / 2)) * i;
             ctx.beginPath();
             ctx.moveTo(x, 0);
             ctx.lineTo(x, height);
             ctx.stroke();
         }
         
-        // Horizontal grid lines (latency)
-        for (let i = 0; i <= 4; i++) {
-            const y = (height / 4) * i;
+        // Horizontal grid lines (latency) - every 20ms
+        for (let i = 0; i <= Math.ceil(maxLatency / 20); i++) {
+            const y = (height / Math.ceil(maxLatency / 20)) * i;
             ctx.beginPath();
             ctx.moveTo(0, y);
             ctx.lineTo(width, y);
             ctx.stroke();
         }
         
-        // Draw latency line
+        // Draw latency line with better styling
         if (latencyData.length > 1) {
             ctx.strokeStyle = '#ff6b6b';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             ctx.beginPath();
             
             latencyData.forEach((point, index) => {
@@ -668,36 +673,47 @@ export class UIManager {
             ctx.stroke();
         }
         
-        // Draw data points
+        // Draw data points with better visibility
         ctx.fillStyle = '#ff6b6b';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        
         latencyData.forEach(point => {
             const x = ((point.vehicleCount - minVehicles) * vehicleScale);
             const y = height - ((point.latency - minLatency) * latencyScale);
             
+            // Draw point with white border
             ctx.beginPath();
-            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
             ctx.fill();
+            ctx.stroke();
         });
         
-        // Draw axis labels
-        ctx.fillStyle = '#ccc';
-        ctx.font = '10px Arial';
+        // Draw axis labels with better formatting
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
         
-        // X-axis labels (vehicle count)
-        for (let i = 0; i <= 5; i++) {
-            const x = (width / 5) * i;
-            const vehicleCount = Math.round(minVehicles + (i / 5) * (maxVehicles - minVehicles));
+        // X-axis labels (vehicle count) - every 2 vehicles
+        for (let i = 0; i <= Math.ceil(maxVehicles / 2); i++) {
+            const x = (width / Math.ceil(maxVehicles / 2)) * i;
+            const vehicleCount = Math.round(minVehicles + (i / Math.ceil(maxVehicles / 2)) * vehicleRange);
             ctx.fillText(vehicleCount.toString(), x, height - 5);
         }
         
-        // Y-axis labels (latency)
+        // Y-axis labels (latency) - every 20ms
         ctx.textAlign = 'right';
-        for (let i = 0; i <= 4; i++) {
-            const y = (height / 4) * i;
-            const latency = Math.round(maxLatency - (i / 4) * (maxLatency - minLatency));
-            ctx.fillText(latency.toString(), 25, y + 3);
+        for (let i = 0; i <= Math.ceil(maxLatency / 20); i++) {
+            const y = (height / Math.ceil(maxLatency / 20)) * i;
+            const latency = Math.round(maxLatency - (i / Math.ceil(maxLatency / 20)) * latencyRange);
+            ctx.fillText(latency.toString(), 30, y + 4);
         }
+        
+        // Add title
+        ctx.fillStyle = '#ff6b6b';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Latency vs Vehicle Count', width / 2, 20);
         
         // Update latency statistics
         this.updateLatencyStats(latencyData);

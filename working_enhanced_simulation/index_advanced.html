@@ -918,101 +918,33 @@
     <!-- Main Statistics Panel -->
     <div class="info-panel simulation-dashboard" id="network-stats-dashboard">
         <div class="dashboard-header">
-            <h3>Network Statistics</h3>
+            <h3>📊 Network Statistics</h3>
             <button class="dashboard-minimize-btn" onclick="toggleDashboard('network-stats-dashboard')">−</button>
         </div>
         <div class="dashboard-content">
-            <div>Packets Sent: <span id="packets-sent">0</span></div>
-            <div>Packets Received: <span id="packets-received">0</span></div>
-            <div>Packets Lost: <span id="packets-lost">0</span></div>
-            <div>Avg Latency: <span id="avg-latency">0 ms</span></div>
-            <div>Total Data: <span id="total-data">0.00 KB</span></div>
-            <div>Handovers: <span id="handover-count">0</span></div>
-            <div>FPS: <span id="fps">0</span></div>
-            <div>AI Epsilon: <span id="ai-epsilon">100.0%</span></div>
-            
-            <!-- AI Decision Statistics -->
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #4CAF50;">
-                <div style="font-weight: bold; color: #4CAF50; margin-bottom: 8px;">AI Decisions:</div>
-                <div>Safety Messages: <span id="safety-messages">0</span></div>
-                <div>Cloud Decisions: <span id="cloud-decisions">0</span></div>
-                <div>Emergency Protocols: <span id="emergency-protocols">0</span></div>
+            <div class="stat-row">
+                <span class="stat-label">Packets Sent:</span>
+                <span class="stat-value" id="packets-sent">0</span>
             </div>
-        </div>
-    </div>
-
-    <!-- Message Type Statistics Panel -->
-    <div class="message-type-panel simulation-dashboard" id="message-types-dashboard">
-        <div class="dashboard-header">
-            <h3>Message Types</h3>
-            <button class="dashboard-minimize-btn" onclick="toggleDashboard('message-types-dashboard')">−</button>
-        </div>
-        <div class="dashboard-content">
-            <div class="message-type-legend">
-                <div class="legend-item" id="safety-message-stats">
-                    <div class="color-box" style="background: #ff0000;"></div>
-                    <span>Safety (M1): <span class="count">0</span></span>
-                </div>
-                <div class="legend-item" id="basic-cam-stats">
-                    <div class="color-box" style="background: #00ff00;"></div>
-                    <span>CAM (M2): <span class="count">0</span></span>
-                </div>
-                <div class="legend-item" id="traffic-message-stats">
-                    <div class="color-box" style="background: #ffa500;"></div>
-                    <span>Traffic (M3): <span class="count">0</span></span>
-                </div>
-                <div class="legend-item" id="infotainment-stats">
-                    <div class="color-box" style="background: #0080ff;"></div>
-                    <span>Info (M4): <span class="count">0</span></span>
-                </div>
+            <div class="stat-row">
+                <span class="stat-label">Packets Received:</span>
+                <span class="stat-value" id="packets-received">0</span>
             </div>
-        </div>
-    </div>
-
-    <!-- RL Learning Panel -->
-    <div class="rl-learning-panel simulation-dashboard" id="rl-learning-dashboard">
-        <div class="dashboard-header">
-            <h3>RL Learning</h3>
-            <button class="dashboard-minimize-btn" onclick="toggleDashboard('rl-learning-dashboard')">−</button>
-        </div>
-        <div class="dashboard-content">
-            <div>Total Reward: <span id="total-reward">0.00</span></div>
-            <div>Avg Reward: <span id="average-reward">0.000</span></div>
-            <div>Episodes: <span id="episode-count">0</span></div>
-            <div>Exploration: <span id="exploration-rate">100.0%</span></div>
-            <div class="progress-container">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="learning-progress" style="width: 0%;"></div>
-                </div>
-                <span class="progress-label">Learning Progress</span>
+            <div class="stat-row">
+                <span class="stat-label">Packets Lost:</span>
+                <span class="stat-value" id="packets-lost">0</span>
             </div>
-        </div>
-    </div>
-
-    <!-- Network Performance Panel -->
-    <div class="network-stats-panel simulation-dashboard" id="network-performance-dashboard">
-        <div class="dashboard-header">
-            <h3>Network Performance</h3>
-            <button class="dashboard-minimize-btn" onclick="toggleDashboard('network-performance-dashboard')">−</button>
-        </div>
-        <div class="dashboard-content">
-            <div class="network-stats" id="dsrc-stats">
-                <h4 style="color: #4CAF50;">DSRC</h4>
-                <div>Sent: <span class="sent">0</span></div>
-                <div>Received: <span class="received">0</span></div>
-                <div>Lost: <span class="lost">0</span></div>
+            <div class="stat-row">
+                <span class="stat-label">Total Data:</span>
+                <span class="stat-value" id="total-data">0.00 KB</span>
             </div>
-            <div class="network-stats" id="wifi-stats">
-                <h4 style="color: #2196F3;">WiFi</h4>
-                <div>Sent: <span class="sent">0</span></div>
-                <div>Received: <span class="received">0</span></div>
-                <div>Lost: <span class="lost">0</span></div>
+            <div class="stat-row">
+                <span class="stat-label">FPS:</span>
+                <span class="stat-value" id="fps">0</span>
             </div>
-            <div class="network-stats" id="lte-stats">
-                <h4 style="color: #9C27B0;">LTE</h4>
-                <div>Sent: <span class="sent">0</span></div>
-                <div>Received: <span class="received">0</span></div>
-                <div>Lost: <span class="lost">0</span></div>
+            <div class="stat-row">
+                <span class="stat-label">AI Epsilon:</span>
+                <span class="stat-value" id="ai-epsilon">100.0%</span>
             </div>
         </div>
     </div>
@@ -1020,12 +952,12 @@
     <!-- Latency Data Graph Panel -->
     <div class="latency-graph-panel simulation-dashboard" id="latency-graph-dashboard">
         <div class="dashboard-header">
-            <h3>Latency vs Vehicle Count</h3>
+            <h3>📈 Latency vs Vehicle Count</h3>
             <button class="dashboard-minimize-btn" onclick="toggleDashboard('latency-graph-dashboard')">−</button>
         </div>
         <div class="dashboard-content">
             <div class="latency-graph-container">
-                <canvas id="latency-graph" width="300" height="200"></canvas>
+                <canvas id="latency-graph" width="350" height="250"></canvas>
                 <div class="graph-legend">
                     <div class="legend-item">
                         <div class="color-box" style="background: #ff6b6b;"></div>
@@ -1038,49 +970,62 @@
                 </div>
             </div>
             <div class="latency-stats">
-                <div>Current Latency: <span id="current-latency">0 ms</span></div>
-                <div>Average Latency: <span id="average-latency-value">0 ms</span></div>
-                <div>Max Latency: <span id="max-latency">0 ms</span></div>
-                <div>Min Latency: <span id="min-latency">0 ms</span></div>
+                <div class="stat-row">
+                    <span class="stat-label">Current:</span>
+                    <span class="stat-value" id="current-latency">0 ms</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Average:</span>
+                    <span class="stat-value" id="average-latency-value">0 ms</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Max:</span>
+                    <span class="stat-value" id="max-latency">0 ms</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Min:</span>
+                    <span class="stat-value" id="min-latency">0 ms</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Vehicle Summary Panel -->
-    <div class="vehicle-summary-panel simulation-dashboard" id="vehicle-summary-dashboard">
+    <!-- Safety Messages Panel -->
+    <div class="safety-messages-panel simulation-dashboard" id="safety-messages-dashboard">
         <div class="dashboard-header">
-            <h3>Vehicle Summary</h3>
-            <button class="dashboard-minimize-btn" onclick="toggleDashboard('vehicle-summary-dashboard')">−</button>
+            <h3>🚨 Safety Messages</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('safety-messages-dashboard')">−</button>
         </div>
         <div class="dashboard-content">
-            <div class="summary-section">
-                <h4>Total Vehicles</h4>
-                <div class="summary-value" id="total-vehicles">0</div>
+            <div class="message-stats">
+                <div class="stat-row">
+                    <span class="stat-label">Safety Messages:</span>
+                    <span class="stat-value" id="safety-message-count">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">CAM Messages:</span>
+                    <span class="stat-value" id="cam-message-count">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Traffic Messages:</span>
+                    <span class="stat-value" id="traffic-message-count">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Infotainment:</span>
+                    <span class="stat-value" id="infotainment-message-count">0</span>
+                </div>
             </div>
-            <div class="summary-section">
-                <h4>By Type</h4>
-                <div>Cars: <span id="car-count">0</span></div>
-                <div>Trucks: <span id="truck-count">0</span></div>
-                <div>Buses: <span id="bus-count">0</span></div>
-            </div>
-            <div class="summary-section">
+            <div class="network-distribution">
                 <h4>Network Distribution</h4>
-                <div>DSRC: <span id="dsrc-vehicles">0</span></div>
-                <div>WiFi: <span id="wifi-vehicles">0</span></div>
-                <div>LTE: <span id="lte-vehicles">0</span></div>
-                <div>None: <span id="none-vehicles">0</span></div>
-            </div>
-            <div class="summary-section">
-                <h4>Message Distribution</h4>
-                <div>Safety: <span id="safety_message-vehicles">0</span></div>
-                <div>CAM: <span id="basic_cam_message-vehicles">0</span></div>
-                <div>Traffic: <span id="traffic_message-vehicles">0</span></div>
-                <div>Info: <span id="infotainment_message-vehicles">0</span></div>
-            </div>
-            <div class="summary-section">
-                <h4>RL Performance</h4>
-                <div>Avg Reward: <span id="vehicle-average-reward">0.000</span></div>
-                <div>Msg Changes: <span id="total-message-changes">0</span></div>
+                <div class="network-bar">
+                    <div class="network-fill dsrc-fill" id="dsrc-fill" style="width: 0%;">DSRC: 0</div>
+                </div>
+                <div class="network-bar">
+                    <div class="network-fill wifi-fill" id="wifi-fill" style="width: 0%;">WiFi: 0</div>
+                </div>
+                <div class="network-bar">
+                    <div class="network-fill lte-fill" id="lte-fill" style="width: 0%;">LTE: 0</div>
+                </div>
             </div>
         </div>
     </div>
@@ -1088,76 +1033,37 @@
     <!-- Processing Dashboard -->
     <div class="processing-dashboard simulation-dashboard" id="processing-dashboard">
         <div class="dashboard-header">
-            <h3>🖥️ Processing Dashboard</h3>
+            <h3>🖥️ Processing Status</h3>
             <button class="dashboard-minimize-btn" onclick="toggleDashboard('processing-dashboard')">−</button>
         </div>
         <div class="dashboard-content">
-            <!-- Base Station Processing -->
             <div class="processing-section">
                 <h4>Base Station</h4>
-                <div class="processing-stat">
-                    <span class="processing-stat-label">Tasks Processed:</span>
-                    <span class="processing-stat-value" id="base-tasks-processed">0</span>
+                <div class="stat-row">
+                    <span class="stat-label">Tasks Processed:</span>
+                    <span class="stat-value" id="base-tasks-processed">0</span>
                 </div>
-                <div class="processing-stat">
-                    <span class="processing-stat-label">Current Load:</span>
-                    <span class="processing-stat-value" id="base-current-load">0/50</span>
+                <div class="stat-row">
+                    <span class="stat-label">Current Load:</span>
+                    <span class="stat-value" id="base-current-load">0/50</span>
                 </div>
-                <div class="processing-load-bar">
-                    <div class="processing-load-fill" id="base-load-fill" style="width: 0%;"></div>
+                <div class="load-bar">
+                    <div class="load-fill" id="base-load-fill" style="width: 0%;"></div>
                 </div>
-                <div class="processing-stat">
-                    <span class="processing-stat-label">Avg Processing Time:</span>
-                    <span class="processing-stat-value" id="base-avg-time">0ms</span>
+                <div class="stat-row">
+                    <span class="stat-label">Avg Processing Time:</span>
+                    <span class="stat-value" id="base-avg-time">0ms</span>
                 </div>
-                <div class="processing-efficiency">
-                    <div class="efficiency-indicator" id="base-efficiency-indicator"></div>
-                    <span id="base-efficiency-value">100%</span> Efficiency
-                </div>
-            </div>
-
-            <!-- RSU Processing Summary -->
-            <div class="processing-section">
-                <h4>RSU Processing</h4>
-                <div class="processing-stat">
-                    <span class="processing-stat-label">Total RSUs:</span>
-                    <span class="processing-stat-value" id="total-rsus">0</span>
-                </div>
-                <div class="processing-stat">
-                    <span class="processing-stat-label">Tasks Processed:</span>
-                    <span class="processing-stat-value" id="rsu-tasks-processed">0</span>
-                </div>
-                <div class="processing-stat">
-                    <span class="processing-stat-label">Average Load:</span>
-                    <span class="processing-stat-value" id="rsu-avg-load">0%</span>
-                </div>
-                <div class="processing-efficiency">
-                    <div class="efficiency-indicator" id="rsu-efficiency-indicator"></div>
-                    <span id="rsu-efficiency-value">100%</span> Efficiency
-                </div>
-            </div>
-
-            <!-- Processing Distribution -->
-            <div class="processing-section">
-                <h4>Task Distribution</h4>
-                <div class="processing-stat">
-                    <span class="processing-stat-label">Base Station:</span>
-                    <span class="processing-stat-value" id="base-task-percentage">0%</span>
-                </div>
-                <div class="processing-stat">
-                    <span class="processing-stat-label">RSUs:</span>
-                    <span class="processing-stat-value" id="rsu-task-percentage">0%</span>
-                </div>
-                <div class="processing-stat">
-                    <span class="processing-stat-label">Total Tasks:</span>
-                    <span class="processing-stat-value" id="total-tasks-processed">0</span>
+                <div class="stat-row">
+                    <span class="stat-label">Efficiency:</span>
+                    <span class="stat-value" id="base-efficiency-value">100%</span>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Traffic Light Control Dashboard -->
-    <div class="traffic-dashboard simulation-dashboard" id="traffic-light-dashboard">
+    <div class="traffic-dashboard simulation-dashboard" id="traffic-light-dashboard" style="display: none;">
         <div class="dashboard-header">
             <h3>🚦 Traffic Light Control</h3>
             <button class="dashboard-minimize-btn" onclick="toggleDashboard('traffic-light-dashboard')">−</button>
@@ -1202,7 +1108,7 @@
     </div>
 
     <!-- RSU AI Agent Dashboard -->
-    <div class="rsu-ai-dashboard simulation-dashboard" id="rsu-ai-dashboard">
+    <div class="rsu-ai-dashboard simulation-dashboard" id="rsu-ai-dashboard" style="display: none;">
         <div class="dashboard-header">
             <h3>🤖 RSU AI Agents</h3>
             <button class="dashboard-minimize-btn" onclick="toggleDashboard('rsu-ai-dashboard')">−</button>
@@ -1246,7 +1152,7 @@
     </div>
 
     <!-- Vehicle Status Panel -->
-    <div class="vehicle-info-panel simulation-dashboard" id="vehicle-status-dashboard">
+    <div class="vehicle-info-panel simulation-dashboard" id="vehicle-status-dashboard" style="display: none;">
         <div class="dashboard-header">
             <h3>Live Vehicle Status</h3>
             <button class="dashboard-minimize-btn" onclick="toggleDashboard('vehicle-status-dashboard')">−</button>
@@ -1272,7 +1178,7 @@
     </div>
 
     <!-- Interactive Control Panel - NEW FEATURE -->
-    <div class="interactive-control-panel simulation-dashboard" id="interactive-controls-dashboard">
+    <div class="interactive-control-panel simulation-dashboard" id="interactive-controls-dashboard" style="display: none;">
         <div class="dashboard-header">
             <h3>🎛️ Interactive Controls</h3>
             <button class="dashboard-minimize-btn" onclick="toggleDashboard('interactive-controls-dashboard')">−</button>
@@ -1348,7 +1254,7 @@
     </div>
 
     <!-- Network Type Statistics Panel -->
-    <div class="network-stats-panel simulation-dashboard">
+    <div class="network-stats-panel simulation-dashboard" style="display: none;">
         <h3>📡 Network Performance</h3>
         <div class="network-type-stats">
             <div class="network-stat dsrc-stat">
