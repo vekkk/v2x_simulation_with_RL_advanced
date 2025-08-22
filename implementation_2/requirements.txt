@@ -1,0 +1,9 @@
+torch
+numpy
+pandas
+matplotlib
+scipy
+gym
+networkx
+plotly
+python-pptx
