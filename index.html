@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Network Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+        }
+        canvas {
+            display: block;
+        }
+        .info-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            z-index: 9999;
+            min-width: 250px;
+            border: 3px solid #4CAF50;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .controls-panel {
+            position: fixed;
+            top: 200px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            z-index: 9999;
+            min-width: 250px;
+            border: 3px solid #f44336;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .button {
+            padding: 15px 25px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 8px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.2);
+        }
+        .button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        #stop-btn {
+            background: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-panel">
+        <div style="margin-bottom: 12px; font-size: 16px;">Packets Sent: <span id="packets-sent">0</span></div>
+        <div style="margin-bottom: 12px; font-size: 16px;">Packets Received: <span id="packets-received">0</span></div>
+        <div style="margin-bottom: 12px; font-size: 16px;">Packets Lost: <span id="packets-lost">0</span></div>
+        <div style="margin-bottom: 12px; font-size: 16px;">FPS: <span id="fps">0</span></div>
+        <div style="margin-bottom: 12px; font-size: 16px;">Average Latency: <span id="average-latency">0 ms</span></div>
+        <div style="margin-bottom: 12px; font-size: 16px;">Total Data: <span id="total-data">0 KB</span></div>
+        <div style="margin-bottom: 12px; font-size: 16px;">Handovers: <span id="handover-count">0</span></div>
+        
+        <div style="margin-top: 20px; border-top: 1px solid #4CAF50; padding-top: 10px;">
+            <div style="margin-bottom: 12px; font-size: 16px;">DSRC Stats:</div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Sent: <span id="dsrc-sent">0</span></div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Received: <span id="dsrc-received">0</span></div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Lost: <span id="dsrc-lost">0</span></div>
+        </div>
+        
+        <div style="margin-top: 20px; border-top: 1px solid #4CAF50; padding-top: 10px;">
+            <div style="margin-bottom: 12px; font-size: 16px;">WIFI Stats:</div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Sent: <span id="wifi-sent">0</span></div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Received: <span id="wifi-received">0</span></div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Lost: <span id="wifi-lost">0</span></div>
+        </div>
+        
+        <div style="margin-top: 20px; border-top: 1px solid #4CAF50; padding-top: 10px;">
+            <div style="margin-bottom: 12px; font-size: 16px;">LTE Stats:</div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Sent: <span id="lte-sent">0</span></div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Received: <span id="lte-received">0</span></div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Lost: <span id="lte-lost">0</span></div>
+        </div>
+        
+        <div style="margin-top: 20px; border-top: 1px solid #4CAF50; padding-top: 10px;">
+            <div style="margin-bottom: 12px; font-size: 16px;">AI Decisions:</div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Safety Messages: <span id="safety-messages">0</span></div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Cloud Decisions: <span id="cloud-decisions">0</span></div>
+            <div style="margin-bottom: 8px; font-size: 14px;">Emergency Protocols: <span id="emergency-protocols">0</span></div>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <button id="start-btn" class="button">Start Simulation</button>
+        <button id="stop-btn" class="button" disabled>Stop Simulation</button>
+    </div>
+
+    <!-- Load simulation as ES6 module -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

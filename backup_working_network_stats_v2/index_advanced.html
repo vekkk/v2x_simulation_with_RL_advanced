@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Network Simulation</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="network-stats-panel">
+        <h3>Network Statistics</h3>
+        <div class="network-stats" id="dsrc-stats">
+            <h4>DSRC</h4>
+            <div>Sent: <span class="sent">0</span></div>
+            <div>Received: <span class="received">0</span></div>
+            <div>Lost: <span class="lost">0</span></div>
+        </div>
+        <div class="network-stats" id="wifi-stats">
+            <h4>WIFI</h4>
+            <div>Sent: <span class="sent">0</span></div>
+            <div>Received: <span class="received">0</span></div>
+            <div>Lost: <span class="lost">0</span></div>
+        </div>
+        <div class="network-stats" id="lte-stats">
+            <h4>LTE</h4>
+            <div>Sent: <span class="sent">0</span></div>
+            <div>Received: <span class="received">0</span></div>
+            <div>Lost: <span class="lost">0</span></div>
+        </div>
+        <div class="network-stats">
+            <h4>Performance Metrics</h4>
+            <div>Avg Latency: <span id="avg-latency">0</span></div>
+            <div>Total Data: <span id="total-data">0</span></div>
+            <div>Handovers: <span id="handover-count">0</span></div>
+        </div>
+    </div>
+
+    <div class="vehicle-info-panel">
+        <h3>Vehicle Information</h3>
+        <div id="vehicle-status-container"></div>
+    </div>
+
+    <div class="controls-panel">
+        <button id="start-btn" class="button" disabled>Start Simulation</button>
+        <button id="stop-btn" class="button" disabled>Stop Simulation</button>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="color-box" style="background: #4CAF50;"></div>
+            <span>DSRC</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background: #2196F3;"></div>
+            <span>WIFI</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background: #9C27B0;"></div>
+            <span>LTE</span>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div style="margin-bottom: 12px; font-size: 16px;">Packets Sent: <span id="packets-sent">0</span></div>
+        <div style="margin-bottom: 12px; font-size: 16px;">Packets Received: <span id="packets-received">0</span></div>
+        <div style="margin-bottom: 12px; font-size: 16px;">Packets Lost: <span id="packets-lost">0</span></div>
+        <div style="margin-bottom: 12px; font-size: 16px;">FPS: <span id="fps">0</span></div>
+        <div style="font-size: 16px;">AI Exploration: <span id="ai-epsilon">100%</span></div>
+    </div>
+
+    <!-- Import map for Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html> 

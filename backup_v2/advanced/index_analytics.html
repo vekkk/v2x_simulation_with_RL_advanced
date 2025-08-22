@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V2X Network Simulation - Performance Analytics</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Adjust existing panels to make room for analytics */
+        .panel {
+            max-height: 35vh;
+        }
+        
+        /* Analytics panel specific adjustments */
+        #analytics-panel {
+            bottom: 20px;
+            max-height: 55vh;
+        }
+        
+        /* Panel styling for analytics page */
+        .panel {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 9999;
+            min-width: 200px;
+            max-width: 220px;
+            border: 2px solid;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            font-size: 12px;
+        }
+        
+        #stats-panel {
+            top: 20px;
+            right: 20px;
+            border-color: #4CAF50;
+        }
+        
+        #message-stats-panel {
+            top: 20px;
+            left: 250px;
+            border-color: #FF9800;
+        }
+        
+        #rl-panel {
+            top: 20px;
+            left: 490px;
+            border-color: #E91E63;
+        }
+        
+        .panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        
+        #stats-panel h3 { color: #4CAF50; }
+        #message-stats-panel h3 { color: #FF9800; }
+        #rl-panel h3 { color: #E91E63; }
+        
+        .stats-grid, .message-legend, .rl-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .stat-item, .message-type, .rl-stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+        }
+        
+        .message-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 8px;
+        }
+        
+        .controls-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 9999;
+            min-width: 200px;
+            border: 2px solid #f44336;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        .control-btn {
+            padding: 12px 20px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .start-btn {
+            background: #4CAF50;
+        }
+        
+        .stop-btn {
+            background: #f44336;
+        }
+        
+        .control-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .control-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        /* Analytics notice */
+        .analytics-notice {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #4CAF50;
+            text-align: center;
+            z-index: 10000;
+            max-width: 600px;
+        }
+        
+        .analytics-notice h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        
+        .analytics-notice p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        
+        .analytics-notice .highlight {
+            color: #FF9800;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Analytics Notice -->
+    <div class="analytics-notice" id="analytics-notice">
+        <h2>📊 V2X Performance Analytics Dashboard</h2>
+        <p>This is a <span class="highlight">data visualization interface</span> for analyzing V2X network performance.</p>
+        <p>To run the full simulation with analytics, please use:</p>
+        <p><strong>🚗 <a href="index_advanced.html" style="color: #4CAF50;">index_advanced.html</a></strong></p>
+        <p>This page demonstrates the analytics system with <span class="highlight">simulated data</span> to show expected performance patterns.</p>
+        <button onclick="startAnalyticsDemo()" class="control-btn start-btn" style="margin-top: 20px;">Start Analytics Demo</button>
+        <button onclick="document.getElementById('analytics-notice').style.display='none'" class="control-btn" style="background: #666; margin-top: 10px;">Hide Notice</button>
+    </div>
+
+    <!-- Main Statistics Panel -->
+    <div class="panel" id="stats-panel">
+        <h3>📡 Network Statistics</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">Packets Sent:</span>
+                <span class="stat-value" id="packets-sent">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Packets Received:</span>
+                <span class="stat-value" id="packets-received">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Packets Lost:</span>
+                <span class="stat-value" id="packets-lost">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Avg Latency:</span>
+                <span class="stat-value" id="avg-latency">0ms</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Total Data:</span>
+                <span class="stat-value" id="total-data">0KB</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Handovers:</span>
+                <span class="stat-value" id="handovers">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">FPS:</span>
+                <span class="stat-value" id="fps">60</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">AI Epsilon:</span>
+                <span class="stat-value" id="ai-epsilon">100.0%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Type Statistics Panel -->
+    <div class="panel" id="message-stats-panel">
+        <h3>📨 Message Type Statistics</h3>
+        <div class="message-legend">
+            <div class="message-type">
+                <span class="message-color" style="background-color: #ff4444;"></span>
+                <span>Safety: <span id="safety-message-count">0</span></span>
+            </div>
+            <div class="message-type">
+                <span class="message-color" style="background-color: #44ff44;"></span>
+                <span>CAM: <span id="basic-cam-message-count">0</span></span>
+            </div>
+            <div class="message-type">
+                <span class="message-color" style="background-color: #4444ff;"></span>
+                <span>Traffic: <span id="traffic-message-count">0</span></span>
+            </div>
+            <div class="message-type">
+                <span class="message-color" style="background-color: #0080ff;"></span>
+                <span>Info: <span id="infotainment-message-count">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RL Learning Panel -->
+    <div class="panel" id="rl-panel">
+        <h3>🧠 RL Learning Progress</h3>
+        <div class="rl-stats">
+            <div class="rl-stat">
+                <span>Total Reward:</span>
+                <span id="total-reward">0</span>
+            </div>
+            <div class="rl-stat">
+                <span>Avg Reward:</span>
+                <span id="average-reward">0.00</span>
+            </div>
+            <div class="rl-stat">
+                <span>Episodes:</span>
+                <span id="episodes">0</span>
+            </div>
+            <div class="rl-stat">
+                <span>Exploration:</span>
+                <span id="exploration-rate">100%</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-label">Learning Progress</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="learning-progress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+        <button id="start-btn" class="control-btn start-btn" onclick="startAnalyticsDemo()">Start Analytics Demo</button>
+        <button id="stop-btn" class="control-btn stop-btn" onclick="stopAnalyticsDemo()" disabled>Stop Demo</button>
+        <button onclick="resetAnalytics()" class="control-btn" style="background: #9C27B0; margin-top: 10px;">Reset Analytics</button>
+    </div>
+
+    <!-- Analytics Panel will be dynamically created by PlotManager -->
+
+    <!-- Chart.js Library for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Analytics Demo Script -->
+    <script type="module">
+        // Import only the PlotManager for analytics
+        import { PlotManager } from './js/analytics/PlotManager.js';
+        
+        let plotManager;
+        let demoInterval;
+        let isRunning = false;
+        let episode = 0;
+        let totalReward = 0;
+        
+        // Initialize PlotManager
+        async function initializeAnalytics() {
+            try {
+                plotManager = new PlotManager();
+                window.plotManager = plotManager;
+                console.log('📊 Analytics system initialized');
+            } catch (error) {
+                console.error('Error initializing analytics:', error);
+            }
+        }
+        
+        // Start analytics demo with simulated data
+        window.startAnalyticsDemo = function() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('stop-btn').disabled = false;
+            
+            console.log('🚀 Starting analytics demo...');
+            
+            // Simulate data updates every 2 seconds
+            demoInterval = setInterval(() => {
+                updateSimulatedStats();
+                if (plotManager) {
+                    plotManager.update();
+                }
+            }, 2000);
+        };
+        
+        // Stop analytics demo
+        window.stopAnalyticsDemo = function() {
+            if (!isRunning) return;
+            
+            isRunning = false;
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+            
+            if (demoInterval) {
+                clearInterval(demoInterval);
+                demoInterval = null;
+            }
+            
+            console.log('⏹️ Analytics demo stopped');
+        };
+        
+        // Reset analytics
+        window.resetAnalytics = function() {
+            episode = 0;
+            totalReward = 0;
+            
+            // Reset UI elements
+            document.getElementById('packets-sent').textContent = '0';
+            document.getElementById('packets-received').textContent = '0';
+            document.getElementById('packets-lost').textContent = '0';
+            document.getElementById('avg-latency').textContent = '0ms';
+            document.getElementById('total-data').textContent = '0KB';
+            document.getElementById('handovers').textContent = '0';
+            document.getElementById('ai-epsilon').textContent = '100.0%';
+            
+            document.getElementById('safety-message-count').textContent = '0';
+            document.getElementById('basic-cam-message-count').textContent = '0';
+            document.getElementById('traffic-message-count').textContent = '0';
+            document.getElementById('infotainment-message-count').textContent = '0';
+            
+            document.getElementById('total-reward').textContent = '0';
+            document.getElementById('average-reward').textContent = '0.00';
+            document.getElementById('episodes').textContent = '0';
+            document.getElementById('exploration-rate').textContent = '100%';
+            document.getElementById('learning-progress').style.width = '0%';
+            
+            if (plotManager) {
+                plotManager.reset();
+            }
+            
+            console.log('🔄 Analytics reset');
+        };
+        
+        // Simulate realistic V2X performance data
+        function updateSimulatedStats() {
+            episode++;
+            
+            // Simulate learning progression
+            const learningProgress = Math.min(1, episode / 20);
+            const epsilon = Math.max(0.1, 1 - learningProgress);
+            
+            // Simulate improving performance
+            const basePRR = 0.7 + learningProgress * 0.25; // 70% to 95%
+            const safetyPRR = 0.85 + learningProgress * 0.14; // 85% to 99%
+            const latency = Math.max(20, 80 - learningProgress * 50); // 80ms to 30ms
+            
+            // Simulate packet statistics
+            const packetsSent = episode * 150 + Math.floor(Math.random() * 50);
+            const packetsReceived = Math.floor(packetsSent * basePRR);
+            const packetsLost = packetsSent - packetsReceived;
+            
+            // Simulate reward (should improve over time)
+            const episodeReward = -10 + learningProgress * 25 + (Math.random() - 0.5) * 5;
+            totalReward += episodeReward;
+            const averageReward = totalReward / episode;
+            
+            // Update UI
+            document.getElementById('packets-sent').textContent = packetsSent;
+            document.getElementById('packets-received').textContent = packetsReceived;
+            document.getElementById('packets-lost').textContent = packetsLost;
+            document.getElementById('avg-latency').textContent = Math.round(latency) + 'ms';
+            document.getElementById('total-data').textContent = Math.round(packetsSent * 0.5) + 'KB';
+            document.getElementById('handovers').textContent = Math.floor(episode * 2.3);
+            document.getElementById('ai-epsilon').textContent = (epsilon * 100).toFixed(1) + '%';
+            
+            // Message type counts
+            document.getElementById('safety-message-count').textContent = Math.floor(packetsSent * 0.3);
+            document.getElementById('basic-cam-message-count').textContent = Math.floor(packetsSent * 0.4);
+            document.getElementById('traffic-message-count').textContent = Math.floor(packetsSent * 0.2);
+            document.getElementById('infotainment-message-count').textContent = Math.floor(packetsSent * 0.1);
+            
+            // RL stats
+            document.getElementById('total-reward').textContent = totalReward.toFixed(2);
+            document.getElementById('average-reward').textContent = averageReward.toFixed(3);
+            document.getElementById('episodes').textContent = episode;
+            document.getElementById('exploration-rate').textContent = (epsilon * 100).toFixed(1) + '%';
+            document.getElementById('learning-progress').style.width = (learningProgress * 100) + '%';
+            
+            console.log(`📊 Episode ${episode}: PRR=${(basePRR*100).toFixed(1)}%, Reward=${episodeReward.toFixed(2)}, Latency=${latency.toFixed(1)}ms`);
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeAnalytics();
+        });
+    </script>
+    
+    <script>
+        // Add helpful console messages
+        console.log('📊 V2X Network Performance Analytics Dashboard');
+        console.log('🎯 Purpose: Visualize and analyze V2X network performance metrics');
+        console.log('');
+        console.log('📈 Analytics Features:');
+        console.log('  • Real-time performance tracking');
+        console.log('  • Reward vs Training Episode plots');
+        console.log('  • Packet Reception Rate (PRR) analysis');
+        console.log('  • Message-type specific performance');
+        console.log('  • Network efficiency monitoring');
+        console.log('  • Latency tracking');
+        console.log('');
+        console.log('🚗 For full simulation: Open index_advanced.html');
+        console.log('📊 For analytics demo: Click "Start Analytics Demo"');
+    </script>
+</body>
+</html> 

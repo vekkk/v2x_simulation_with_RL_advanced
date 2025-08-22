@@ -1,0 +1,486 @@
+import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
+import { CONFIG } from '../config/config.js';
+
+export class VehicleManager {
+    constructor(scene) {
+        this.scene = scene;
+        this.vehicles = [];
+        this.laneVehicles = Array.from({ length: CONFIG.ROAD.NUM_LANES }, () => []);
+        this.vehicleCount = 0;
+        this.handoverCount = 0;
+        this.vehicleSummary = {
+            totalVehicles: 0,
+            byType: {},
+            byNetwork: {
+                DSRC: 0,
+                WIFI: 0,
+                LTE: 0,
+                None: 0
+            }
+        };
+        this.networkManager = null;
+        
+        // Only create vehicles if scene is available
+        if (this.scene) {
+            this.createVehicles();
+        } else {
+            console.warn('VehicleManager: Scene not available, deferring vehicle creation');
+        }
+    }
+
+    // Add method to initialize vehicles when scene becomes available
+    initializeVehicles() {
+        if (!this.scene) {
+            console.error('VehicleManager: Cannot initialize vehicles without scene');
+            return;
+        }
+        if (this.vehicles.length === 0) {
+            this.createVehicles();
+        }
+    }
+
+    setNetworkManager(networkManager) {
+        this.networkManager = networkManager;
+    }
+
+    incrementHandoverCount() {
+        this.handoverCount++;
+    }
+
+    getHandoverCount() {
+        return this.handoverCount;
+    }
+
+    getVehicleSummary() {
+        return this.vehicleSummary;
+    }
+
+    createVehicles() {
+        for (let i = 0; i < CONFIG.VEHICLES.NUM_VEHICLES; i++) {
+            const typesArray = Object.keys(CONFIG.VEHICLES.TYPES);
+            const type = typesArray[Math.floor(Math.random() * typesArray.length)];
+            const vehicleConfig = CONFIG.VEHICLES.TYPES[type];
+            
+            const vehicle = new THREE.Mesh(
+                new THREE.BoxGeometry(
+                    vehicleConfig.GEOMETRY.width,
+                    vehicleConfig.GEOMETRY.height,
+                    vehicleConfig.GEOMETRY.length
+                ),
+                new THREE.MeshPhongMaterial({ color: vehicleConfig.COLOR })
+            );
+            vehicle.castShadow = true;
+            
+            // Assign to a random lane
+            const lane = Math.floor(Math.random() * CONFIG.ROAD.NUM_LANES);
+            const totalRoadWidth = CONFIG.ROAD.LANE_WIDTH * CONFIG.ROAD.NUM_LANES;
+            const roadStartX = -totalRoadWidth / 2 + CONFIG.ROAD.LANE_WIDTH / 2;
+            const x = roadStartX + lane * CONFIG.ROAD.LANE_WIDTH;
+            
+            // Find a safe initial position
+            let z;
+            let attempts = 0;
+            const maxAttempts = 50;
+            do {
+                z = -CONFIG.ROAD.LENGTH / 2 + (i / CONFIG.VEHICLES.NUM_VEHICLES) * CONFIG.ROAD.LENGTH + 
+                    Math.random() * (CONFIG.ROAD.LENGTH / CONFIG.VEHICLES.NUM_VEHICLES / 2);
+                attempts++;
+                if (attempts > maxAttempts) {
+                    console.warn("Could not find safe initial position for vehicle, placing anyway.");
+                    break;
+                }
+            } while (!this.isPositionSafe(vehicle, z, lane));
+
+            vehicle.position.set(x, vehicleConfig.GEOMETRY.height / 2, z);
+            vehicle.userData = {
+                id: i,
+                type: type,
+                speed: this.getRandomSpeed(vehicleConfig.SPEED_RANGE),
+                lastPacketTime: performance.now(),
+                lane: lane,
+                assignedLaneX: x,
+                currentNetwork: 'None',
+                communicationLine: null
+            };
+            
+            this.scene.add(vehicle);
+            this.vehicles.push(vehicle);
+            this.laneVehicles[lane].push(vehicle);
+
+            // Update summary
+            this.vehicleSummary.totalVehicles++;
+            this.vehicleSummary.byType[type] = (this.vehicleSummary.byType[type] || 0) + 1;
+        }
+    }
+
+    isPositionSafe(vehicle, newZ, lane) {
+        if (!this.laneVehicles[lane]) {
+            console.warn(`Lane ${lane} is not properly initialized`);
+            return false;
+        }
+
+        const vehicleLength = vehicle.geometry.parameters.length;
+        const safetyMargin = 2;
+
+        for (const otherVehicle of this.laneVehicles[lane]) {
+            if (!otherVehicle || otherVehicle === vehicle) continue;
+
+            const otherLength = otherVehicle.geometry.parameters.length;
+            const minDistance = (vehicleLength + otherLength) / 2 + safetyMargin;
+
+            if (Math.abs(newZ - otherVehicle.position.z) < minDistance) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    getRandomSpeed(speedRange) {
+        return speedRange.min + Math.random() * (speedRange.max - speedRange.min);
+    }
+
+    updatePositions(deltaTime, currentTime) {
+        // Sort vehicles by lane and z-position for proper collision detection
+        this.vehicles.sort((a, b) => {
+            if (a.userData.lane !== b.userData.lane) {
+                return a.userData.lane - b.userData.lane;
+            }
+            return a.position.z - b.position.z;
+        });
+        
+        this.vehicles.forEach(vehicle => {
+            const proposedZ = vehicle.position.z + vehicle.userData.speed * deltaTime;
+            
+            // Check for collisions with vehicles in the same lane
+            const lane = vehicle.userData.lane;
+            const vehicleLength = vehicle.geometry.parameters.length;
+            const safetyMargin = 2; // Minimum distance between vehicles
+            
+            let canMove = true;
+            for (const otherVehicle of this.vehicles) {
+                if (otherVehicle === vehicle || otherVehicle.userData.lane !== lane) continue;
+                
+                const otherLength = otherVehicle.geometry.parameters.length;
+                const minDistance = (vehicleLength + otherLength) / 2 + safetyMargin;
+                
+                if (Math.abs(proposedZ - otherVehicle.position.z) < minDistance) {
+                    canMove = false;
+                    break;
+                }
+            }
+            
+            if (canMove) {
+                vehicle.position.z = proposedZ;
+            }
+            
+            // Reset position if vehicle goes off screen
+            if (vehicle.position.z > CONFIG.ROAD.LENGTH / 2) {
+                vehicle.position.z = -CONFIG.ROAD.LENGTH / 2;
+            }
+            
+            // Send packets at regular intervals
+            if (currentTime - vehicle.userData.lastPacketTime >= CONFIG.NETWORK.PACKET_SEND_INTERVAL) {
+                if (this.networkManager) {
+                    const network = this.networkManager.selectBestNetwork(vehicle);
+                    if (network) {
+                        this.updateVehicleNetwork(vehicle, network);
+                    }
+                }
+                vehicle.userData.lastPacketTime = currentTime;
+            }
+        });
+    }
+
+    getRandomVehicleType() {
+        const types = Object.keys(CONFIG.VEHICLES.TYPES);
+        return types[Math.floor(Math.random() * types.length)];
+    }
+
+    resetVehicles() {
+        this.vehicles.forEach(vehicle => {
+            vehicle.userData.lastPacketTime = 0;
+            if (vehicle.userData.communicationLine) {
+                this.scene.remove(vehicle.userData.communicationLine);
+                vehicle.userData.communicationLine.geometry.dispose();
+                vehicle.userData.communicationLine.material.dispose();
+                vehicle.userData.communicationLine = null;
+            }
+        });
+        this.vehicles = [];
+        this.vehicleCount = 0;
+        this.vehicleSummary = {
+            totalVehicles: 0,
+            byType: {},
+            byNetwork: {
+                DSRC: 0,
+                WIFI: 0,
+                LTE: 0,
+                None: 0
+            }
+        };
+    }
+
+    updateVehicleNetwork(vehicle, newNetwork) {
+        if (vehicle.userData.currentNetwork !== newNetwork) {
+            // Decrement old network count
+            if (vehicle.userData.currentNetwork) {
+                this.vehicleSummary.byNetwork[vehicle.userData.currentNetwork]--;
+            } else {
+                this.vehicleSummary.byNetwork.None--;
+            }
+            
+            // Update vehicle's network
+            vehicle.userData.currentNetwork = newNetwork;
+            
+            // Increment new network count
+            if (newNetwork) {
+                this.vehicleSummary.byNetwork[newNetwork]++;
+            } else {
+                this.vehicleSummary.byNetwork.None++;
+            }
+        }
+    }
+
+    createVehicle(type) {
+        const vehicleConfig = CONFIG.VEHICLES.TYPES[type];
+        const vehicle = new THREE.Group();
+        
+        // Create vehicle body based on type
+        switch(type) {
+            case 'CAR':
+                // Car body
+                const carBody = new THREE.Mesh(
+                    new THREE.BoxGeometry(
+                        vehicleConfig.GEOMETRY.width,
+                        vehicleConfig.GEOMETRY.height * 0.4,
+                        vehicleConfig.GEOMETRY.length
+                    ),
+                    new THREE.MeshPhongMaterial({ 
+                        color: vehicleConfig.MODEL.bodyColor,
+                        shininess: 30,
+                        specular: 0x444444
+                    })
+                );
+                carBody.position.y = vehicleConfig.GEOMETRY.height * 0.2;
+                
+                // Car cabin
+                const carCabin = new THREE.Mesh(
+                    new THREE.BoxGeometry(
+                        vehicleConfig.GEOMETRY.width * 0.9,
+                        vehicleConfig.GEOMETRY.height * 0.6,
+                        vehicleConfig.GEOMETRY.length * 0.5
+                    ),
+                    new THREE.MeshPhongMaterial({ 
+                        color: vehicleConfig.MODEL.windowColor,
+                        transparent: true,
+                        opacity: 0.7,
+                        shininess: 90,
+                        specular: 0x666666
+                    })
+                );
+                carCabin.position.y = vehicleConfig.GEOMETRY.height * 0.5;
+                carCabin.position.z = -vehicleConfig.GEOMETRY.length * 0.1;
+                
+                // Wheels
+                const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+                const wheelMaterial = new THREE.MeshPhongMaterial({ 
+                    color: vehicleConfig.MODEL.wheelColor,
+                    shininess: 50
+                });
+                
+                const wheelPositions = [
+                    { x: -vehicleConfig.GEOMETRY.width/2 - 0.15, z: vehicleConfig.GEOMETRY.length/3 },
+                    { x: vehicleConfig.GEOMETRY.width/2 + 0.15, z: vehicleConfig.GEOMETRY.length/3 },
+                    { x: -vehicleConfig.GEOMETRY.width/2 - 0.15, z: -vehicleConfig.GEOMETRY.length/3 },
+                    { x: vehicleConfig.GEOMETRY.width/2 + 0.15, z: -vehicleConfig.GEOMETRY.length/3 }
+                ];
+                
+                wheelPositions.forEach(pos => {
+                    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                    wheel.rotation.z = Math.PI / 2;
+                    wheel.position.set(pos.x, 0.4, pos.z);
+                    vehicle.add(wheel);
+                });
+                
+                // Headlights
+                const headlightGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+                const headlightMaterial = new THREE.MeshPhongMaterial({ 
+                    color: vehicleConfig.MODEL.headlightColor,
+                    emissive: vehicleConfig.MODEL.headlightColor,
+                    emissiveIntensity: 0.5
+                });
+                
+                const headlightPositions = [
+                    { x: -vehicleConfig.GEOMETRY.width/3, z: vehicleConfig.GEOMETRY.length/2 },
+                    { x: vehicleConfig.GEOMETRY.width/3, z: vehicleConfig.GEOMETRY.length/2 }
+                ];
+                
+                headlightPositions.forEach(pos => {
+                    const headlight = new THREE.Mesh(headlightGeometry, headlightMaterial);
+                    headlight.position.set(pos.x, 0.5, pos.z);
+                    vehicle.add(headlight);
+                });
+                
+                vehicle.add(carBody);
+                vehicle.add(carCabin);
+                break;
+                
+            case 'TRUCK':
+                // Truck cabin
+                const truckCabin = new THREE.Mesh(
+                    new THREE.BoxGeometry(
+                        vehicleConfig.GEOMETRY.width * 0.8,
+                        vehicleConfig.GEOMETRY.height * 0.4,
+                        vehicleConfig.GEOMETRY.length * 0.3
+                    ),
+                    new THREE.MeshPhongMaterial({ 
+                        color: vehicleConfig.MODEL.cabinColor,
+                        shininess: 30,
+                        specular: 0x444444
+                    })
+                );
+                truckCabin.position.y = vehicleConfig.GEOMETRY.height * 0.2;
+                truckCabin.position.z = vehicleConfig.GEOMETRY.length * 0.35;
+                
+                // Truck body
+                const truckBody = new THREE.Mesh(
+                    new THREE.BoxGeometry(
+                        vehicleConfig.GEOMETRY.width,
+                        vehicleConfig.GEOMETRY.height * 0.6,
+                        vehicleConfig.GEOMETRY.length * 0.7
+                    ),
+                    new THREE.MeshPhongMaterial({ 
+                        color: vehicleConfig.MODEL.bodyColor,
+                        shininess: 30,
+                        specular: 0x444444
+                    })
+                );
+                truckBody.position.y = vehicleConfig.GEOMETRY.height * 0.3;
+                truckBody.position.z = -vehicleConfig.GEOMETRY.length * 0.15;
+                
+                // Wheels
+                const truckWheelGeometry = new THREE.CylinderGeometry(0.6, 0.6, 0.4, 16);
+                const truckWheelMaterial = new THREE.MeshPhongMaterial({ 
+                    color: vehicleConfig.MODEL.wheelColor,
+                    shininess: 50
+                });
+                
+                const truckWheelPositions = [
+                    { x: -vehicleConfig.GEOMETRY.width/2 - 0.2, z: vehicleConfig.GEOMETRY.length/3 },
+                    { x: vehicleConfig.GEOMETRY.width/2 + 0.2, z: vehicleConfig.GEOMETRY.length/3 },
+                    { x: -vehicleConfig.GEOMETRY.width/2 - 0.2, z: -vehicleConfig.GEOMETRY.length/3 },
+                    { x: vehicleConfig.GEOMETRY.width/2 + 0.2, z: -vehicleConfig.GEOMETRY.length/3 }
+                ];
+                
+                truckWheelPositions.forEach(pos => {
+                    const wheel = new THREE.Mesh(truckWheelGeometry, truckWheelMaterial);
+                    wheel.rotation.z = Math.PI / 2;
+                    wheel.position.set(pos.x, 0.6, pos.z);
+                    vehicle.add(wheel);
+                });
+                
+                vehicle.add(truckCabin);
+                vehicle.add(truckBody);
+                break;
+                
+            case 'BUS':
+                // Bus body
+                const busBody = new THREE.Mesh(
+                    new THREE.BoxGeometry(
+                        vehicleConfig.GEOMETRY.width,
+                        vehicleConfig.GEOMETRY.height * 0.8,
+                        vehicleConfig.GEOMETRY.length
+                    ),
+                    new THREE.MeshPhongMaterial({ 
+                        color: vehicleConfig.MODEL.bodyColor,
+                        shininess: 30,
+                        specular: 0x444444
+                    })
+                );
+                busBody.position.y = vehicleConfig.GEOMETRY.height * 0.4;
+                
+                // Bus windows
+                const windowRows = 3;
+                const windowColumns = 4;
+                const windowWidth = vehicleConfig.GEOMETRY.width * 0.8;
+                const windowHeight = vehicleConfig.GEOMETRY.height * 0.2;
+                const windowDepth = 0.1;
+                const windowSpacing = vehicleConfig.GEOMETRY.length / (windowColumns + 1);
+                const windowVerticalSpacing = vehicleConfig.GEOMETRY.height * 0.6 / (windowRows + 1);
+                
+                for (let row = 0; row < windowRows; row++) {
+                    for (let col = 0; col < windowColumns; col++) {
+                        const window = new THREE.Mesh(
+                            new THREE.BoxGeometry(windowWidth, windowHeight, windowDepth),
+                            new THREE.MeshPhongMaterial({ 
+                                color: vehicleConfig.MODEL.windowColor,
+                                transparent: true,
+                                opacity: 0.7,
+                                shininess: 90,
+                                specular: 0x666666
+                            })
+                        );
+                        window.position.set(
+                            0,
+                            vehicleConfig.GEOMETRY.height * 0.2 + row * windowVerticalSpacing,
+                            -vehicleConfig.GEOMETRY.length/2 + (col + 1) * windowSpacing
+                        );
+                        vehicle.add(window);
+                    }
+                }
+                
+                // Wheels
+                const busWheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
+                const busWheelMaterial = new THREE.MeshPhongMaterial({ 
+                    color: vehicleConfig.MODEL.wheelColor,
+                    shininess: 50
+                });
+                
+                const busWheelPositions = [
+                    { x: -vehicleConfig.GEOMETRY.width/2 - 0.2, z: vehicleConfig.GEOMETRY.length/3 },
+                    { x: vehicleConfig.GEOMETRY.width/2 + 0.2, z: vehicleConfig.GEOMETRY.length/3 },
+                    { x: -vehicleConfig.GEOMETRY.width/2 - 0.2, z: -vehicleConfig.GEOMETRY.length/3 },
+                    { x: vehicleConfig.GEOMETRY.width/2 + 0.2, z: -vehicleConfig.GEOMETRY.length/3 }
+                ];
+                
+                busWheelPositions.forEach(pos => {
+                    const wheel = new THREE.Mesh(busWheelGeometry, busWheelMaterial);
+                    wheel.rotation.z = Math.PI / 2;
+                    wheel.position.set(pos.x, 0.5, pos.z);
+                    vehicle.add(wheel);
+                });
+                
+                vehicle.add(busBody);
+                break;
+        }
+        
+        // Add vehicle to scene
+        this.scene.add(vehicle);
+        
+        // Initialize vehicle properties
+        const speed = Math.random() * 
+            (vehicleConfig.SPEED_RANGE.max - vehicleConfig.SPEED_RANGE.min) + 
+            vehicleConfig.SPEED_RANGE.min;
+            
+        const lane = Math.floor(Math.random() * CONFIG.ROAD.NUM_LANES);
+        const lanePosition = this.calculateLanePosition(lane);
+        
+        vehicle.position.set(
+            lanePosition,
+            0,
+            -CONFIG.ROAD.LENGTH/2 + Math.random() * CONFIG.ROAD.LENGTH
+        );
+        
+        // Store vehicle data
+        this.vehicles.push({
+            object: vehicle,
+            type: type,
+            speed: speed,
+            lane: lane,
+            network: null,
+            lastPacketTime: 0
+        });
+        
+        return vehicle;
+    }
+} 

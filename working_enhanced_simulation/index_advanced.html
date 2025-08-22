@@ -1,0 +1,1946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced V2X Network Simulation with RL</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Analytics toggle button styling */
+        .analytics-toggle-btn {
+            background: linear-gradient(45deg, #9C27B0, #E91E63);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .analytics-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .analytics-toggle-btn.active {
+            background: linear-gradient(45deg, #4CAF50, #8BC34A);
+        }
+        
+        /* Dashboard toggle button styling */
+        .dashboard-toggle-btn {
+            background: linear-gradient(45deg, #4CAF50, #8BC34A);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+            width: 100%;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .dashboard-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+        }
+        
+        .dashboard-toggle-btn.dashboards-hidden {
+            background: linear-gradient(45deg, #FF9800, #FF5722);
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+        
+        .dashboard-toggle-btn.dashboards-hidden:hover {
+            box-shadow: 0 6px 16px rgba(255, 152, 0, 0.4);
+        }
+        
+        /* Hide analytics panel by default */
+        #analytics-panel {
+            display: none;
+        }
+        
+        /* When analytics are shown, adjust other panels */
+        body.analytics-visible #analytics-panel {
+            display: block;
+        }
+        
+        /* Dashboard visibility controls - START COLLAPSED */
+        .simulation-dashboard {
+            display: none; /* Start hidden by default */
+            transition: all 0.3s ease;
+            position: fixed;
+            cursor: move;
+            user-select: none;
+            z-index: 1000;
+            border: 2px solid transparent;
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        
+        .simulation-dashboard.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .simulation-dashboard:hover {
+            border-color: #FF9800;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+        
+        .simulation-dashboard.dragging {
+            opacity: 0.8;
+            transform: rotate(2deg);
+            z-index: 1010;
+            border-color: #FF9800;
+            box-shadow: 0 8px 24px rgba(255, 152, 0, 0.5);
+        }
+        
+        /* Add drag handle to each panel */
+        .simulation-dashboard h3 {
+            cursor: move;
+            background: linear-gradient(45deg, #333, #555);
+            margin: -20px -20px 15px -20px;
+            padding: 10px 20px;
+            border-radius: 8px 8px 0 0;
+            color: #FF9800;
+            font-size: 14px;
+            position: relative;
+        }
+        
+        .simulation-dashboard h3::after {
+            content: "⋮⋮";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #FF9800;
+            font-size: 16px;
+            line-height: 0.5;
+        }
+        
+        .simulation-dashboard h3:hover {
+            background: linear-gradient(45deg, #444, #666);
+            transform: translateY(-1px);
+        }
+        
+        .simulation-dashboard h3:hover::after {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* When dashboards are shown */
+        body.dashboards-visible .simulation-dashboard {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Controls Panel should always be visible */
+        .controls-panel {
+            display: block !important;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #333;
+        }
+        
+        /* When dashboards are hidden, make controls more prominent */
+        body:not(.dashboards-visible) .controls-panel {
+            border-color: #4CAF50;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        
+        /* Improved minimal overlay */
+        .minimal-overlay {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #4CAF50;
+            z-index: 1000;
+            display: block; /* Always show */
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        /* Hide minimal overlay when dashboards are visible */
+        body.dashboards-visible .minimal-overlay {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .minimal-overlay h4 {
+            color: #4CAF50;
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            text-align: center;
+            border-bottom: 1px solid #4CAF50;
+            padding-bottom: 8px;
+        }
+        
+        .minimal-overlay .status-item {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            min-width: 220px;
+            padding: 4px 0;
+        }
+        
+        .minimal-overlay .status-value {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        /* Interactive Control Panel Styling - NEW */
+        .interactive-control-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 3px solid #FF9800;
+            box-shadow: 0 8px 32px rgba(255, 152, 0, 0.3);
+            z-index: 1002;
+            min-width: 280px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .interactive-control-panel h3 {
+            color: #FF9800;
+            margin: 0 0 15px 0;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .control-group:last-child {
+            border-bottom: none;
+        }
+
+        .control-group h4 {
+            color: #FFC107;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+
+        /* Speed Control Buttons */
+        .speed-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .speed-btn {
+            flex: 1;
+            padding: 8px 12px;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .speed-btn:hover {
+            background: #555;
+            transform: translateY(-1px);
+        }
+
+        .speed-btn.active {
+            background: #FF9800;
+            border-color: #FF9800;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
+        }
+
+        .current-speed {
+            text-align: center;
+            font-size: 12px;
+            color: #FFC107;
+            font-weight: bold;
+        }
+
+        /* Control Sliders */
+        .control-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .control-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #FF9800;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(255, 152, 0, 0.4);
+        }
+
+        .control-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #FF9800;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(255, 152, 0, 0.4);
+        }
+
+        .slider-value {
+            text-align: center;
+            font-size: 12px;
+            color: #FFC107;
+            font-weight: bold;
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .action-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Performance Meters */
+        .performance-meter {
+            margin-bottom: 12px;
+        }
+
+        .meter-label {
+            font-size: 11px;
+            color: #FFC107;
+            margin-bottom: 4px;
+        }
+
+        .meter-bar {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .meter-fill.ai-meter {
+            background: linear-gradient(90deg, #9C27B0, #E91E63);
+        }
+
+        .meter-value {
+            font-size: 11px;
+            color: white;
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        /* Network Stats Panel */
+        .network-stats-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #2196F3;
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
+            z-index: 1001;
+            min-width: 250px;
+        }
+
+        .network-stats-panel h3 {
+            color: #2196F3;
+            margin: 0 0 12px 0;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .network-type-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .network-stat {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .network-stat.dsrc-stat {
+            border-left-color: #FF5722;
+        }
+
+        .network-stat.wifi-stat {
+            border-left-color: #4CAF50;
+        }
+
+        .network-stat.lte-stat {
+            border-left-color: #9C27B0;
+        }
+
+        .network-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .network-icon {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .network-name {
+            font-weight: bold;
+            color: #FFC107;
+        }
+
+        .network-metrics {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+        }
+
+        .network-metrics div {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #FFC107;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        /* Processing Dashboard Styles */
+        .processing-dashboard {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .processing-dashboard h3 {
+            color: #ecf0f1;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .processing-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .processing-section h4 {
+            color: #ecf0f1;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            padding-bottom: 5px;
+        }
+
+        .processing-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .processing-metric:last-child {
+            border-bottom: none;
+        }
+
+        .processing-metric span {
+            color: #ecf0f1;
+            font-size: 0.9em;
+        }
+
+        .processing-metric .value {
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .load-bar {
+            width: 100px;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .load-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #f39c12);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .load-bar-fill.high-load {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+
+        .efficiency-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #27ae60;
+            display: inline-block;
+            margin-left: 8px;
+            box-shadow: 0 0 8px rgba(39, 174, 96, 0.6);
+        }
+
+        .efficiency-indicator.warning {
+            background: #f39c12;
+            box-shadow: 0 0 8px rgba(243, 156, 18, 0.6);
+        }
+
+        .efficiency-indicator.critical {
+            background: #e74c3c;
+            box-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
+        }
+
+        .distribution-chart {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .distribution-item {
+            text-align: center;
+            flex: 1;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            margin: 0 5px;
+        }
+
+        .distribution-item .percentage {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .distribution-item .label {
+            font-size: 0.8em;
+            color: #bdc3c7;
+            margin-top: 4px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .interactive-control-panel {
+                width: 250px;
+            }
+            .network-stats-panel {
+                width: 220px;
+            }
+        }
+
+        /* Initial positioning for each panel to avoid overlap */
+        .info-panel {
+            top: 20px;
+            right: 20px;
+        }
+        
+        .message-type-panel {
+            top: 20px;
+            right: 300px;
+        }
+        
+        .rl-learning-panel {
+            top: 220px;
+            right: 20px;
+        }
+        
+        .network-stats-panel.simulation-dashboard {
+            top: 220px;
+            right: 300px;
+        }
+        
+        .vehicle-summary-panel {
+            top: 420px;
+            right: 20px;
+        }
+        
+        .vehicle-info-panel {
+            top: 420px;
+            right: 300px;
+        }
+        
+        .interactive-control-panel {
+            top: 20px;
+            left: 20px;
+        }
+        
+        .network-stats-panel:not(.simulation-dashboard) {
+            bottom: 20px;
+            right: 20px;
+        }
+
+        .distribution-bar.rsu-distribution {
+            background: linear-gradient(90deg, #9C27B0, #E91E63);
+        }
+
+        /* Traffic Light Dashboard Styles */
+        .traffic-dashboard {
+            position: fixed;
+            top: 20px;
+            right: 320px;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #FFC107;
+            box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3);
+            z-index: 1000;
+            min-width: 280px;
+            backdrop-filter: blur(10px);
+        }
+
+        .traffic-dashboard h3 {
+            color: #FFC107;
+            margin: 0 0 15px 0;
+            text-align: center;
+            font-size: 16px;
+            text-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+        }
+
+        /* RSU AI Agent Dashboard Styles */
+        .rsu-ai-dashboard {
+            position: fixed;
+            top: 20px;
+            right: 620px;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #9C27B0;
+            box-shadow: 0 8px 25px rgba(156, 39, 176, 0.3);
+            z-index: 1000;
+            min-width: 280px;
+            backdrop-filter: blur(10px);
+        }
+
+        .rsu-ai-dashboard h3 {
+            color: #9C27B0;
+            margin: 0 0 15px 0;
+            text-align: center;
+            font-size: 16px;
+            text-shadow: 0 2px 4px rgba(156, 39, 176, 0.3);
+        }
+
+        /* Enhanced Efficiency and Learning Progress Indicators */
+        .efficiency-value.high {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .efficiency-value.medium {
+            color: #FF9800;
+            font-weight: bold;
+        }
+
+        .efficiency-value.low {
+            color: #F44336;
+            font-weight: bold;
+        }
+
+        .learning-progress.advanced {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .learning-progress.intermediate {
+            color: #FF9800;
+            font-weight: bold;
+        }
+
+        .learning-progress.beginner {
+            color: #2196F3;
+            font-weight: bold;
+        }
+
+        /* Dashboard minimize/maximize functionality */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .dashboard-minimize-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            min-width: 24px;
+            text-align: center;
+        }
+        
+        .dashboard-minimize-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        
+        .dashboard-content {
+            transition: all 0.3s ease;
+        }
+        
+        .dashboard-minimized {
+            height: 40px !important;
+            min-height: 40px !important;
+            overflow: hidden;
+        }
+        
+        .dashboard-minimized .dashboard-content {
+            display: none;
+        }
+        
+        .dashboard-minimized .dashboard-header {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .dashboard-tab {
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .dashboard-tab:hover {
+            background: rgba(0,0,0,0.8);
+            border-color: #66BB6A;
+            transform: translateY(-1px);
+        }
+        
+        .dashboard-tab h3 {
+            margin: 0;
+            font-size: 14px;
+            color: white;
+        }
+
+        /* Latency Data Graph Styles */
+        .latency-graph-container {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            margin-bottom: 15px;
+            background: #222;
+            border-radius: 8px;
+            border: 1px solid #444;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .latency-graph {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+            background: #111;
+        }
+
+        .graph-legend {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            padding: 5px 0;
+            border-top: 1px solid #444;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+
+        .latency-stats {
+            text-align: center;
+            font-size: 12px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        font-family: Arial, sans-serif;
+    ">
+        <div style="text-align: center;">
+            <h2 style="color: #FF9800; margin-bottom: 20px;">🚗 V2X Simulation Loading...</h2>
+            <div id="loading-progress" style="font-size: 18px; margin-bottom: 15px;">Initializing...</div>
+            <div style="width: 300px; height: 6px; background: #333; border-radius: 3px; overflow: hidden;">
+                <div id="loading-bar" style="
+                    height: 100%;
+                    background: linear-gradient(90deg, #FF9800, #FFC107);
+                    width: 0%;
+                    transition: width 0.5s ease;
+                "></div>
+            </div>
+            <div style="margin-top: 15px; font-size: 14px; color: #ccc;">
+                Loading 3D scene, vehicles, and network components...
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimal Overlay (shown when dashboards are hidden) -->
+    <div class="minimal-overlay">
+        <h4>🚗 V2X Simulation Status</h4>
+        <div class="status-item">
+            <span>Vehicles:</span>
+            <span class="status-value" id="minimal-vehicles">0</span>
+        </div>
+        <div class="status-item">
+            <span>Packets Sent:</span>
+            <span class="status-value" id="minimal-packets">0</span>
+        </div>
+        <div class="status-item">
+            <span>FPS:</span>
+            <span class="status-value" id="minimal-fps">0</span>
+        </div>
+        <div class="status-item">
+            <span>AI Learning:</span>
+            <span class="status-value" id="minimal-learning">0%</span>
+        </div>
+        <div class="status-item">
+            <span>Network Load:</span>
+            <span class="status-value" id="minimal-network-load">Low</span>
+        </div>
+        <div class="status-item">
+            <span>Simulation:</span>
+            <span class="status-value" id="minimal-simulation-status">Running</span>
+        </div>
+    </div>
+
+    <!-- Main Statistics Panel -->
+    <div class="info-panel simulation-dashboard" id="network-stats-dashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h3>Network Statistics</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('network-stats-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div>Packets Sent: <span id="packets-sent">0</span></div>
+            <div>Packets Received: <span id="packets-received">0</span></div>
+            <div>Packets Lost: <span id="packets-lost">0</span></div>
+            <div>Avg Latency: <span id="avg-latency">0 ms</span></div>
+            <div>Total Data: <span id="total-data">0.00 KB</span></div>
+            <div>Handovers: <span id="handover-count">0</span></div>
+            <div>FPS: <span id="fps">0</span></div>
+            <div>AI Epsilon: <span id="ai-epsilon">100.0%</span></div>
+            
+            <!-- AI Decision Statistics -->
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #4CAF50;">
+                <div style="font-weight: bold; color: #4CAF50; margin-bottom: 8px;">AI Decisions:</div>
+                <div>Safety Messages: <span id="safety-messages">0</span></div>
+                <div>Cloud Decisions: <span id="cloud-decisions">0</span></div>
+                <div>Emergency Protocols: <span id="emergency-protocols">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Type Statistics Panel -->
+    <div class="message-type-panel simulation-dashboard" id="message-types-dashboard">
+        <div class="dashboard-header">
+            <h3>Safety Messages</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('message-types-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="message-type-legend">
+                <div class="legend-item" id="safety-message-stats">
+                    <div class="color-box" style="background: #ff0000;"></div>
+                    <span>Safety (M1): <span class="count">0</span></span>
+                </div>
+                <div class="legend-item" id="basic-cam-stats">
+                    <div class="color-box" style="background: #00ff00;"></div>
+                    <span>CAM (M2): <span class="count">0</span></span>
+                </div>
+                <div class="legend-item" id="traffic-message-stats">
+                    <div class="color-box" style="background: #ffa500;"></div>
+                    <span>Traffic (M3): <span class="count">0</span></span>
+                </div>
+                <div class="legend-item" id="infotainment-stats">
+                    <div class="color-box" style="background: #0080ff;"></div>
+                    <span>Info (M4): <span class="count">0</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Performance Panel -->
+    <div class="network-stats-panel simulation-dashboard" id="network-performance-dashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h3>Network Performance</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('network-performance-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="network-stats" id="dsrc-stats">
+                <h4 style="color: #4CAF50;">DSRC</h4>
+                <div>Sent: <span class="sent">0</span></div>
+                <div>Received: <span class="received">0</span></div>
+                <div>Lost: <span class="lost">0</span></div>
+            </div>
+            <div class="network-stats" id="wifi-stats">
+                <h4 style="color: #2196F3;">WiFi</h4>
+                <div>Sent: <span class="sent">0</span></div>
+                <div>Received: <span class="received">0</span></div>
+                <div>Lost: <span class="lost">0</span></div>
+            </div>
+            <div class="network-stats" id="lte-stats">
+                <h4 style="color: #9C27B0;">LTE</h4>
+                <div>Sent: <span class="sent">0</span></div>
+                <div>Received: <span class="received">0</span></div>
+                <div>Lost: <span class="lost">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Latency Data Graph Panel -->
+    <div class="latency-graph-panel simulation-dashboard" id="latency-graph-dashboard">
+        <div class="dashboard-header">
+            <h3>📈 Latency vs Vehicle Count</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('latency-graph-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="latency-graph-container">
+                <canvas id="latency-graph" width="350" height="250"></canvas>
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #ff6b6b;"></div>
+                        <span>Latency (ms)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #4ecdc4;"></div>
+                        <span>Vehicle Count</span>
+                    </div>
+                </div>
+            </div>
+            <div class="latency-stats">
+                <div class="stat-row">
+                    <span class="stat-label">Current:</span>
+                    <span class="stat-value" id="current-latency">0 ms</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Average:</span>
+                    <span class="stat-value" id="average-latency-value">0 ms</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Max:</span>
+                    <span class="stat-value" id="max-latency">0 ms</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Min:</span>
+                    <span class="stat-value" id="min-latency">0 ms</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Safety Messages Panel -->
+    <div class="safety-messages-panel simulation-dashboard" id="safety-messages-dashboard">
+        <div class="dashboard-header">
+            <h3>🚨 Safety Messages</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('safety-messages-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="message-stats">
+                <div class="stat-row">
+                    <span class="stat-label">Safety Messages:</span>
+                    <span class="stat-value" id="safety-message-count">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">CAM Messages:</span>
+                    <span class="stat-value" id="cam-message-count">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Traffic Messages:</span>
+                    <span class="stat-value" id="traffic-message-count">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Infotainment:</span>
+                    <span class="stat-value" id="infotainment-message-count">0</span>
+                </div>
+            </div>
+            <div class="network-distribution">
+                <h4>Network Distribution</h4>
+                <div class="network-bar">
+                    <div class="network-fill dsrc-fill" id="dsrc-fill" style="width: 0%;">DSRC: 0</div>
+                </div>
+                <div class="network-bar">
+                    <div class="network-fill wifi-fill" id="wifi-fill" style="width: 0%;">WiFi: 0</div>
+                </div>
+                <div class="network-bar">
+                    <div class="network-fill lte-fill" id="lte-fill" style="width: 0%;">LTE: 0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Dashboard -->
+    <div class="processing-dashboard simulation-dashboard" id="processing-dashboard">
+        <div class="dashboard-header">
+            <h3>🖥️ Processing Status</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('processing-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="processing-section">
+                <h4>Base Station</h4>
+                <div class="stat-row">
+                    <span class="stat-label">Tasks Processed:</span>
+                    <span class="stat-value" id="base-tasks-processed">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Current Load:</span>
+                    <span class="stat-value" id="base-current-load">0/50</span>
+                </div>
+                <div class="load-bar">
+                    <div class="load-fill" id="base-load-fill" style="width: 0%;"></div>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Avg Processing Time:</span>
+                    <span class="stat-value" id="base-avg-time">0ms</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Efficiency:</span>
+                    <span class="stat-value" id="base-efficiency-value">100%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Traffic Light Control Dashboard -->
+    <div class="traffic-dashboard simulation-dashboard" id="traffic-light-dashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h3>🚦 Traffic Light Control</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('traffic-light-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="processing-section">
+                <h4>Intersection Management</h4>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Total Intersections:</span>
+                    <span class="processing-stat-value" id="total-intersections">0</span>
+                </div>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Active Intersections:</span>
+                    <span class="processing-stat-value" id="active-intersections">0</span>
+                </div>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Average Wait Time:</span>
+                    <span class="processing-stat-value" id="avg-wait-time">0 s</span>
+                </div>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Traffic Throughput:</span>
+                    <span class="processing-stat-value" id="traffic-throughput">0</span>
+                </div>
+            </div>
+
+            <div class="processing-section">
+                <h4>System Performance</h4>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Traffic Efficiency:</span>
+                    <span class="processing-stat-value efficiency-value" id="traffic-efficiency">0%</span>
+                </div>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Coordination Success:</span>
+                    <span class="processing-stat-value" id="coordination-success">0%</span>
+                </div>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Emergency Activations:</span>
+                    <span class="processing-stat-value" id="emergency-activations">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RSU AI Agent Dashboard -->
+    <div class="rsu-ai-dashboard simulation-dashboard" id="rsu-ai-dashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h3>🤖 RSU AI Agents</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('rsu-ai-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="processing-section">
+                <h4>Agent Overview</h4>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Total Agents:</span>
+                    <span class="processing-stat-value" id="total-rsu-agents">0</span>
+                </div>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Average Load:</span>
+                    <span class="processing-stat-value" id="rsu-agent-avg-load">0%</span>
+                </div>
+                <div class="processing-load-bar">
+                    <div class="processing-load-fill" id="rsu-load-bar" style="width: 0%;"></div>
+                </div>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Messages Processed:</span>
+                    <span class="processing-stat-value" id="rsu-messages-processed">0</span>
+                </div>
+            </div>
+
+            <div class="processing-section">
+                <h4>Performance Metrics</h4>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Avg Response Time:</span>
+                    <span class="processing-stat-value" id="rsu-avg-response-time">0 ms</span>
+                </div>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Cooperation Events:</span>
+                    <span class="processing-stat-value" id="cooperation-events">0</span>
+                </div>
+                <div class="processing-stat">
+                    <span class="processing-stat-label">Learning Progress:</span>
+                    <span class="processing-stat-value learning-progress" id="rsu-learning-progress">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Status Panel -->
+    <div class="vehicle-info-panel simulation-dashboard" id="vehicle-status-dashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h3>Live Vehicle Status</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('vehicle-status-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div id="vehicle-status-container"></div>
+        </div>
+    </div>
+
+    <!-- Vehicle Summary Panel -->
+    <div class="vehicle-summary-panel simulation-dashboard" id="vehicle-summary-dashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h3>Vehicle Summary</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('vehicle-summary-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="summary-section">
+                <h4>Total Vehicles</h4>
+                <div class="summary-value" id="total-vehicles">0</div>
+            </div>
+            <div class="summary-section">
+                <h4>By Type</h4>
+                <div>Cars: <span id="car-count">0</span></div>
+                <div>Trucks: <span id="truck-count">0</span></div>
+                <div>Buses: <span id="bus-count">0</span></div>
+            </div>
+            <div class="summary-section">
+                <h4>Network Distribution</h4>
+                <div>DSRC: <span id="dsrc-vehicles">0</span></div>
+                <div>WiFi: <span id="wifi-vehicles">0</span></div>
+                <div>LTE: <span id="lte-vehicles">0</span></div>
+                <div>None: <span id="none-vehicles">0</span></div>
+            </div>
+            <div class="summary-section">
+                <h4>Message Distribution</h4>
+                <div>Safety: <span id="safety_message-vehicles">0</span></div>
+                <div>CAM: <span id="basic_cam_message-vehicles">0</span></div>
+                <div>Traffic: <span id="traffic_message-vehicles">0</span></div>
+                <div>Info: <span id="infotainment_message-vehicles">0</span></div>
+            </div>
+            <div class="summary-section">
+                <h4>RL Performance</h4>
+                <div>Avg Reward: <span id="vehicle-average-reward">0.000</span></div>
+                <div>Msg Changes: <span id="total-message-changes">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+        <button id="start-btn" class="button" disabled>Start Simulation</button>
+        <button id="stop-btn" class="button" disabled>Stop Simulation</button>
+        <button id="dashboard-toggle" class="dashboard-toggle-btn" onclick="toggleDashboards()">
+            🎛️ Hide Dashboards
+        </button>
+        <button id="analytics-toggle" class="analytics-toggle-btn" onclick="toggleAnalytics()">
+            📊 Show Analytics
+        </button>
+        <button class="analytics-toggle-btn" onclick="resetPanelPositions()" style="background: linear-gradient(45deg, #607D8B, #455A64); margin-top: 5px;">
+            📍 Reset Layout
+        </button>
+    </div>
+
+    <!-- Interactive Control Panel - NEW FEATURE -->
+    <div class="interactive-control-panel simulation-dashboard" id="interactive-controls-dashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h3>🎛️ Interactive Controls</h3>
+            <button class="dashboard-minimize-btn" onclick="toggleDashboard('interactive-controls-dashboard')">−</button>
+        </div>
+        <div class="dashboard-content">
+            <!-- Simulation Speed Controls -->
+            <div class="control-group">
+                <h4>⚡ Simulation Speed</h4>
+                <div class="speed-buttons">
+                    <button class="speed-btn" onclick="setSimulationSpeed(0.5)">0.5x</button>
+                    <button class="speed-btn active" onclick="setSimulationSpeed(1.0)">1.0x</button>
+                    <button class="speed-btn" onclick="setSimulationSpeed(2.0)">2.0x</button>
+                    <button class="speed-btn" onclick="setSimulationSpeed(5.0)">5.0x</button>
+                </div>
+                <div class="current-speed">Current: <span id="current-speed">1.0x</span></div>
+            </div>
+
+            <!-- Traffic Density Control -->
+            <div class="control-group">
+                <h4>🚗 Traffic Density</h4>
+                <input type="range" id="traffic-density" min="1" max="20" value="5" class="control-slider">
+                <div class="slider-value">Vehicles: <span id="traffic-value">5</span></div>
+            </div>
+
+            <!-- Vehicle Speed Control -->
+            <div class="control-group">
+                <h4>🏎️ Vehicle Speed</h4>
+                <input type="range" id="vehicle-speed" min="20" max="120" value="60" class="control-slider">
+                <div class="slider-value">Speed: <span id="speed-value">60</span> km/h</div>
+            </div>
+
+            <!-- Network Signal Strength -->
+            <div class="control-group">
+                <h4>📡 Signal Strength</h4>
+                <input type="range" id="signal-strength" min="0.1" max="1.0" step="0.1" value="0.8" class="control-slider">
+                <div class="slider-value">Strength: <span id="signal-value">0.8</span></div>
+            </div>
+
+            <!-- AI Learning Rate -->
+            <div class="control-group">
+                <h4>🧠 AI Learning Rate</h4>
+                <input type="range" id="learning-rate" min="0.01" max="0.5" step="0.01" value="0.1" class="control-slider">
+                <div class="slider-value">Rate: <span id="learning-value">0.1</span></div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="control-group">
+                <h4>⚡ Quick Actions</h4>
+                <button class="action-btn" onclick="resetSimulation()">🔄 Reset Simulation</button>
+                <button class="action-btn" onclick="saveScenario()">💾 Save Scenario</button>
+                <button class="action-btn" onclick="emergencyMode()">🚨 Emergency Mode</button>
+            </div>
+
+            <!-- Performance Meters -->
+            <div class="control-group">
+                <h4>📊 Live Performance</h4>
+                <div class="performance-meter">
+                    <div class="meter-label">Network Efficiency</div>
+                    <div class="meter-bar">
+                        <div class="meter-fill" id="efficiency-meter" style="width: 0%;"></div>
+                    </div>
+                    <div class="meter-value" id="efficiency-value">0%</div>
+                </div>
+                <div class="performance-meter">
+                    <div class="meter-label">AI Confidence</div>
+                    <div class="meter-bar">
+                        <div class="meter-fill ai-meter" id="confidence-meter" style="width: 0%;"></div>
+                    </div>
+                    <div class="meter-value" id="confidence-value">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Type Statistics Panel -->
+    <div class="network-stats-panel simulation-dashboard" style="display: none;">
+        <h3>📡 Network Performance</h3>
+        <div class="network-type-stats">
+            <div class="network-stat dsrc-stat">
+                <div class="network-header">
+                    <span class="network-icon">🛣️</span>
+                    <span class="network-name">DSRC</span>
+                </div>
+                <div class="network-metrics">
+                    <div>Sent: <span id="dsrc-sent">0</span></div>
+                    <div>Received: <span id="dsrc-received">0</span></div>
+                    <div>Success: <span id="dsrc-success">0%</span></div>
+                </div>
+            </div>
+            <div class="network-stat wifi-stat">
+                <div class="network-header">
+                    <span class="network-icon">📶</span>
+                    <span class="network-name">WiFi</span>
+                </div>
+                <div class="network-metrics">
+                    <div>Sent: <span id="wifi-sent">0</span></div>
+                    <div>Received: <span id="wifi-received">0</span></div>
+                    <div>Success: <span id="wifi-success">0%</span></div>
+                </div>
+            </div>
+            <div class="network-stat lte-stat">
+                <div class="network-header">
+                    <span class="network-icon">📱</span>
+                    <span class="network-name">LTE</span>
+                </div>
+                <div class="network-metrics">
+                    <div>Sent: <span id="lte-sent">0</span></div>
+                    <div>Received: <span id="lte-received">0</span></div>
+                    <div>Success: <span id="lte-success">0%</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Panel (Hidden by default) -->
+    <!-- This will be dynamically created by PlotManager when analytics are enabled -->
+
+    <!-- Chart.js Library for Real-time Analytics (loaded only when needed) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Import map for Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    
+    <script>
+        // Analytics toggle functionality
+        let analyticsEnabled = false;
+        let dashboardsEnabled = true; // Dashboards enabled by default
+        
+        function toggleAnalytics() {
+            const button = document.getElementById('analytics-toggle');
+            const body = document.body;
+            
+            analyticsEnabled = !analyticsEnabled;
+            
+            if (analyticsEnabled) {
+                // Enable analytics
+                body.classList.add('analytics-visible');
+                button.textContent = '📊 Hide Analytics';
+                button.classList.add('active');
+                
+                // Initialize analytics if not already done
+                if (window.plotManager) {
+                    console.log('📊 Analytics enabled - real-time plots will appear');
+                } else {
+                    console.log('📊 Analytics enabled - plots will initialize when simulation starts');
+                }
+            } else {
+                // Disable analytics
+                body.classList.remove('analytics-visible');
+                button.textContent = '📊 Show Analytics';
+                button.classList.remove('active');
+                
+                // Hide analytics panel if it exists
+                const analyticsPanel = document.getElementById('analytics-panel');
+                if (analyticsPanel) {
+                    analyticsPanel.style.display = 'none';
+                }
+                
+                console.log('📊 Analytics disabled');
+            }
+        }
+        
+        function toggleDashboards() {
+            const button = document.getElementById('dashboard-toggle');
+            const body = document.body;
+            
+            dashboardsEnabled = !dashboardsEnabled;
+            
+            if (dashboardsEnabled) {
+                // Show dashboards
+                body.classList.add('dashboards-visible');
+                button.textContent = '📊 Hide Dashboards';
+                button.classList.remove('dashboards-hidden');
+                
+                // Animate dashboards in
+                const dashboards = document.querySelectorAll('.simulation-dashboard');
+                dashboards.forEach((dashboard, index) => {
+                    setTimeout(() => {
+                        dashboard.classList.add('show');
+                    }, index * 100); // Stagger the animations
+                });
+                
+                console.log('📊 Dashboards shown - full monitoring interface active');
+            } else {
+                // Hide dashboards
+                body.classList.remove('dashboards-visible');
+                button.textContent = '📊 Show Dashboards';
+                button.classList.add('dashboards-hidden');
+                
+                // Remove show class from all dashboards
+                const dashboards = document.querySelectorAll('.simulation-dashboard');
+                dashboards.forEach(dashboard => {
+                    dashboard.classList.remove('show');
+                });
+                
+                console.log('🎯 Dashboards hidden - clean simulation view active');
+            }
+        }
+        
+        // Individual dashboard toggle function
+        function toggleDashboard(dashboardId) {
+            const dashboard = document.getElementById(dashboardId);
+            const button = dashboard.querySelector('.dashboard-minimize-btn');
+            
+            if (dashboard.classList.contains('dashboard-minimized')) {
+                // Maximize dashboard
+                dashboard.classList.remove('dashboard-minimized');
+                button.textContent = '−';
+                button.title = 'Minimize dashboard';
+                console.log(`📊 Dashboard ${dashboardId} maximized`);
+            } else {
+                // Minimize dashboard
+                dashboard.classList.add('dashboard-minimized');
+                button.textContent = '+';
+                button.title = 'Maximize dashboard';
+                console.log(`📊 Dashboard ${dashboardId} minimized`);
+            }
+        }
+        
+        // Update minimal overlay with current stats
+        function updateMinimalOverlay() {
+            if (!dashboardsEnabled) {
+                const totalVehicles = document.getElementById('total-vehicles')?.textContent || '0';
+                const packetsSent = document.getElementById('packets-sent')?.textContent || '0';
+                const fps = document.getElementById('fps')?.textContent || '0';
+                const learningProgress = document.getElementById('learning-progress')?.style.width || '0%';
+                
+                document.getElementById('minimal-vehicles').textContent = totalVehicles;
+                document.getElementById('minimal-packets').textContent = packetsSent;
+                document.getElementById('minimal-fps').textContent = fps;
+                document.getElementById('minimal-learning').style.width = learningProgress;
+            }
+        }
+        
+        // Update minimal overlay every 2 seconds
+        setInterval(updateMinimalOverlay, 2000);
+        
+        // Make analytics state available globally
+        window.isAnalyticsEnabled = () => analyticsEnabled;
+        window.isDashboardsEnabled = () => dashboardsEnabled;
+        
+        // Interactive Control Functions
+        let currentSimulationSpeed = 1.0;
+        
+        function setSimulationSpeed(speed) {
+            currentSimulationSpeed = speed;
+            if (window.simulationManager) {
+                window.simulationManager.setTimeScale(speed);
+            }
+            
+            // Update UI
+            document.getElementById('current-speed').textContent = speed + 'x';
+            
+            // Update button states
+            const buttons = document.querySelectorAll('.speed-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === speed + 'x') {
+                    btn.classList.add('active');
+                }
+            });
+            
+            console.log(`Simulation speed set to ${speed}x`);
+        }
+        
+        function resetSimulation() {
+            if (window.simulationManager) {
+                window.simulationManager.reset();
+                console.log('🔄 Simulation reset');
+            } else {
+                console.warn('Simulation manager not available');
+            }
+        }
+        
+        function saveScenario() {
+            if (window.simulationManager) {
+                const state = window.simulationManager.getSimulationState();
+                const scenarioData = {
+                    timestamp: new Date().toISOString(),
+                    vehicleCount: state.totalVehicles,
+                    simulationSpeed: currentSimulationSpeed,
+                    networkStats: window.simulationManager.networkManager?.getStats() || {},
+                    aiStats: window.simulationManager.networkManager?.ai?.getStats() || {}
+                };
+                
+                // Save to local storage
+                const scenarios = JSON.parse(localStorage.getItem('savedScenarios') || '[]');
+                scenarios.push(scenarioData);
+                localStorage.setItem('savedScenarios', JSON.stringify(scenarios));
+                
+                console.log('💾 Scenario saved:', scenarioData);
+                alert('Scenario saved successfully!');
+            }
+        }
+        
+        function emergencyMode() {
+            if (window.simulationManager) {
+                // Set emergency parameters
+                setSimulationSpeed(0.5); // Slow down
+                window.simulationManager.setSignalStrength(1.0); // Max signal
+                
+                console.log('🚨 Emergency mode activated');
+                alert('🚨 Emergency mode activated!\n- Simulation slowed to 0.5x\n- Signal strength maximized');
+            }
+        }
+        
+        // Initialize control event listeners
+        function initializeControls() {
+            // Traffic density slider
+            const trafficSlider = document.getElementById('traffic-density');
+            const trafficValue = document.getElementById('traffic-value');
+            
+            trafficSlider.addEventListener('input', function() {
+                const count = parseInt(this.value);
+                trafficValue.textContent = count;
+                
+                if (window.simulationManager) {
+                    window.simulationManager.setVehicleCount(count);
+                }
+            });
+            
+            // Vehicle speed slider
+            const speedSlider = document.getElementById('vehicle-speed');
+            const speedValue = document.getElementById('speed-value');
+            
+            speedSlider.addEventListener('input', function() {
+                const speed = parseInt(this.value);
+                speedValue.textContent = speed;
+                
+                if (window.simulationManager) {
+                    // Convert km/h to simulation speed multiplier
+                    const speedMultiplier = speed / 60; // Base speed is 60 km/h
+                    window.simulationManager.setVehicleSpeed(speedMultiplier);
+                }
+            });
+            
+            // Signal strength slider
+            const signalSlider = document.getElementById('signal-strength');
+            const signalValue = document.getElementById('signal-value');
+            
+            signalSlider.addEventListener('input', function() {
+                const strength = parseFloat(this.value);
+                signalValue.textContent = strength.toFixed(1);
+                
+                if (window.simulationManager) {
+                    window.simulationManager.setSignalStrength(strength);
+                }
+            });
+            
+            // Learning rate slider
+            const learningSlider = document.getElementById('learning-rate');
+            const learningValue = document.getElementById('learning-value');
+            
+            learningSlider.addEventListener('input', function() {
+                const rate = parseFloat(this.value);
+                learningValue.textContent = rate.toFixed(2);
+                
+                if (window.simulationManager) {
+                    window.simulationManager.setLearningRate(rate);
+                }
+            });
+            
+            console.log('🎛️ Interactive controls initialized');
+        }
+        
+        // Update performance meters
+        function updatePerformanceMeters() {
+            if (window.simulationManager) {
+                // Network efficiency
+                const efficiency = window.simulationManager.getNetworkEfficiency();
+                const efficiencyMeter = document.getElementById('efficiency-meter');
+                const efficiencyValue = document.getElementById('efficiency-value');
+                
+                if (efficiencyMeter && efficiencyValue) {
+                    efficiencyMeter.style.width = efficiency + '%';
+                    efficiencyValue.textContent = efficiency + '%';
+                }
+                
+                // AI confidence
+                const confidence = window.simulationManager.getAIConfidence();
+                const confidenceMeter = document.getElementById('confidence-meter');
+                const confidenceValue = document.getElementById('confidence-value');
+                
+                if (confidenceMeter && confidenceValue) {
+                    confidenceMeter.style.width = confidence + '%';
+                    confidenceValue.textContent = confidence + '%';
+                }
+            }
+        }
+        
+        // Initialize controls when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeControls();
+            
+            // Update performance meters every second
+            setInterval(updatePerformanceMeters, 1000);
+        });
+        
+        // Make functions globally available
+        window.setSimulationSpeed = setSimulationSpeed;
+        window.resetSimulation = resetSimulation;
+        window.saveScenario = saveScenario;
+        window.emergencyMode = emergencyMode;
+        window.updatePerformanceMeters = updatePerformanceMeters;
+        window.initializeControls = initializeControls;
+        
+        // Draggable Dashboard Functionality
+        let draggedElement = null;
+        let dragOffset = { x: 0, y: 0 };
+        
+        function initializeDraggablePanels() {
+            const panels = document.querySelectorAll('.simulation-dashboard');
+            
+            panels.forEach(panel => {
+                const header = panel.querySelector('h3');
+                if (header) {
+                    header.addEventListener('mousedown', startDrag);
+                    panel.addEventListener('mousedown', bringToFront);
+                }
+            });
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+            
+            console.log('🎛️ Dashboard panels are now draggable! Drag by the header to reposition.');
+        }
+        
+        function startDrag(e) {
+            e.preventDefault();
+            draggedElement = e.target.closest('.simulation-dashboard');
+            
+            if (draggedElement) {
+                const rect = draggedElement.getBoundingClientRect();
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+                
+                draggedElement.classList.add('dragging');
+                document.body.style.cursor = 'grabbing';
+            }
+        }
+        
+        function drag(e) {
+            if (draggedElement) {
+                e.preventDefault();
+                
+                const x = e.clientX - dragOffset.x;
+                const y = e.clientY - dragOffset.y;
+                
+                // Constrain to viewport
+                const maxX = window.innerWidth - draggedElement.offsetWidth;
+                const maxY = window.innerHeight - draggedElement.offsetHeight;
+                
+                const constrainedX = Math.max(0, Math.min(x, maxX));
+                const constrainedY = Math.max(0, Math.min(y, maxY));
+                
+                draggedElement.style.left = constrainedX + 'px';
+                draggedElement.style.top = constrainedY + 'px';
+                draggedElement.style.right = 'auto';
+                draggedElement.style.bottom = 'auto';
+            }
+        }
+        
+        function stopDrag() {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+                draggedElement = null;
+                document.body.style.cursor = 'default';
+                
+                // Save panel positions to localStorage
+                savePanelPositions();
+            }
+        }
+        
+        function bringToFront(e) {
+            const panel = e.currentTarget;
+            const allPanels = document.querySelectorAll('.simulation-dashboard');
+            
+            // Reset z-index for all panels
+            allPanels.forEach(p => p.style.zIndex = '1000');
+            
+            // Bring clicked panel to front
+            panel.style.zIndex = '1005';
+        }
+        
+        function savePanelPositions() {
+            const positions = {};
+            const panels = document.querySelectorAll('.simulation-dashboard');
+            
+            panels.forEach(panel => {
+                if (panel.id || panel.className) {
+                    const key = panel.id || panel.className.split(' ')[0];
+                    positions[key] = {
+                        left: panel.style.left,
+                        top: panel.style.top,
+                        right: panel.style.right,
+                        bottom: panel.style.bottom
+                    };
+                }
+            });
+            
+            localStorage.setItem('v2x-panel-positions', JSON.stringify(positions));
+        }
+        
+        function loadPanelPositions() {
+            const saved = localStorage.getItem('v2x-panel-positions');
+            if (saved) {
+                try {
+                    const positions = JSON.parse(saved);
+                    const panels = document.querySelectorAll('.simulation-dashboard');
+                    
+                    panels.forEach(panel => {
+                        const key = panel.id || panel.className.split(' ')[0];
+                        if (positions[key]) {
+                            const pos = positions[key];
+                            if (pos.left) panel.style.left = pos.left;
+                            if (pos.top) panel.style.top = pos.top;
+                            if (pos.right && !pos.left) panel.style.right = pos.right;
+                            if (pos.bottom && !pos.top) panel.style.bottom = pos.bottom;
+                        }
+                    });
+                    
+                    console.log('📍 Restored saved panel positions');
+                } catch (e) {
+                    console.log('📍 No saved panel positions found, using defaults');
+                }
+            }
+        }
+        
+        function resetPanelPositions() {
+            localStorage.removeItem('v2x-panel-positions');
+            location.reload();
+        }
+        
+        // Make reset function globally available
+        window.resetPanelPositions = resetPanelPositions;
+        
+        // Add helpful console messages for the real simulation
+        console.log('🚗 Advanced V2X Network Simulation with RL');
+        console.log('🎯 This runs the ACTUAL simulation with:');
+        console.log('  • Real 3D vehicles moving on roads');
+        console.log('  • Live AI learning with Q-learning algorithm');
+        console.log('  • Actual network packet transmission');
+        console.log('  • Configurable interface options');
+        console.log('');
+        console.log('🎛️ Interface Controls:');
+        console.log('  • Click "🎛️ Hide Dashboards" for clean 3D view');
+        console.log('  • Click "📊 Show Analytics" for performance plots');
+        console.log('  • Drag dashboard headers to reposition panels');
+        console.log('  • Click "📍 Reset Layout" to restore default positions');
+        console.log('  • Mix and match for your preferred view');
+        console.log('');
+        console.log('📊 Analytics Features (Optional):');
+        console.log('  • Real-time learning progress tracking');
+        console.log('  • Packet reception rate analysis');
+        console.log('  • Network efficiency monitoring');
+        console.log('');
+        console.log('🚀 Click "Start Simulation" to begin the real V2X simulation!');
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', async () => {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const loadingProgress = document.getElementById('loading-progress');
+            const loadingBar = document.getElementById('loading-bar');
+            
+            // Function to update loading progress
+            window.updateLoadingProgress = (step, total, message) => {
+                const percentage = Math.round((step / total) * 100);
+                loadingProgress.textContent = message;
+                loadingBar.style.width = percentage + '%';
+            };
+            
+            try {
+                // Import and initialize simulation with progress tracking
+                updateLoadingProgress(1, 8, 'Loading simulation modules...');
+                const { SimulationManager } = await import('./js/SimulationManager.js?v=' + Date.now());
+                
+                updateLoadingProgress(2, 8, 'Creating simulation manager...');
+                const simulation = new SimulationManager();
+                
+                updateLoadingProgress(3, 8, 'Initializing managers...');
+                await simulation.initialize();
+                
+                // Set global reference for testing
+                window.simulationManager = simulation;
+                
+                updateLoadingProgress(8, 8, 'Finalizing setup...');
+                
+                // Enable start button after initialization
+                const startButton = document.getElementById('start-btn');
+                if (startButton) {
+                    startButton.disabled = false;
+                }
+                
+                // Initialize draggable panels
+                setTimeout(() => {
+                    initializeDraggablePanels();
+                    loadPanelPositions();
+                }, 100);
+                
+                // Hide loading overlay with a slight delay to show completion
+                setTimeout(() => {
+                    loadingOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingOverlay.style.display = 'none';
+                    }, 500);
+                }, 1000);
+                
+                console.log('🚀 V2X Simulation ready! Click "Start Simulation" to begin.');
+            } catch (error) {
+                console.error('❌ Failed to initialize simulation:', error);
+                loadingProgress.textContent = 'Error: Failed to load simulation';
+                loadingBar.style.background = '#f44336';
+                
+                // Show error message and hide overlay after delay
+                setTimeout(() => {
+                    alert('Failed to initialize simulation. Check console for details.');
+                    loadingOverlay.style.display = 'none';
+                }, 2000);
+            }
+        });
+
+        // Global test functions for debugging
+        window.forceSafetyMessage = function() {
+            if (window.simulationManager && window.simulationManager.vehicleManager && window.simulationManager.vehicleManager.vehicles.length > 0) {
+                const vehicle = window.simulationManager.vehicleManager.vehicles[0];
+                window.simulationManager.createSafetyMessageForVehicle(vehicle);
+                console.log('🧪 Manually created safety message for testing');
+            } else {
+                console.log('❌ Cannot create safety message - simulation not ready');
+            }
+        };
+        
+        window.testSafetyMessage = function() {
+            if (window.simulationManager) {
+                console.log('🧪 Safety Messages Array:', window.simulationManager.safetyMessages);
+                console.log('🧪 Safety Messages Count:', window.simulationManager.safetyMessages ? window.simulationManager.safetyMessages.length : 0);
+                console.log('🧪 Vehicle Count:', window.simulationManager.vehicleManager ? window.simulationManager.vehicleManager.vehicles.length : 0);
+            } else {
+                console.log('❌ Simulation manager not available');
+            }
+        };
+        
+        window.checkNetworkManagerVersion = function() {
+            if (window.simulationManager && window.simulationManager.networkManager) {
+                console.log('🔍 Network Manager Version:', window.simulationManager.networkManager.getVersion());
+            } else {
+                console.log('❌ Network Manager not available');
+            }
+        };
+        
+        window.createImmediateSafetyMessage = function() {
+            if (window.simulationManager && window.simulationManager.vehicleManager && window.simulationManager.vehicleManager.vehicles.length > 0) {
+                const vehicle = window.simulationManager.vehicleManager.vehicles[0];
+                window.simulationManager.createSafetyMessageForVehicle(vehicle);
+                console.log('🧪 Created immediate safety message');
+                
+                // Force UI update
+                setTimeout(() => {
+                    window.simulationManager.updateComprehensiveUI();
+                }, 100);
+            }
+        };
+        
+        console.log('🚨 To test safety messages, use: forceSafetyMessage() in console');
+        console.log('🚨 Example: forceSafetyMessage()');
+        console.log('🧪 To test visualization: testSafetyMessage() in console');
+        console.log('🔍 To check version: checkNetworkManagerVersion() in console');
+        console.log('🚨 To create immediate safety message: createImmediateSafetyMessage() in console');
+    </script>
+</body>
+</html> 
